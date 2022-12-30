@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only --exit-child --watch src src/index.ts"
+    "dev": "ts-node-dev --respawn --transpile-only --exit-child --watch src src/index.ts",
+    "start": "pm2 start src/index.ts",
+    "postinstall": "pm2 install typescript"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +34,7 @@
     "ioredis": "^5.2.4",
     "jsonwebtoken": "^9.0.0",
     "node-telegram-bot-api": "^0.60.0",
+    "pm2": "^5.2.2",
     "socket.io": "^4.5.4",
     "socket.io-msgpack-parser": "^3.0.2",
     "telegram": "^2.15.2"
