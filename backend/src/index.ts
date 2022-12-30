@@ -21,6 +21,7 @@ const prisma = new PrismaClient()
 const connections: { [key: string]: TelegramClient } = {}
 
 const app = express()
+app.use(express.json())
 app.use(cors())
 
 const server = http.createServer(app)
@@ -210,7 +211,8 @@ app.get("/notifiers", jwtMiddleware, async (req, res) => {
 
   const notifiers = await prisma.notifier.findMany({ where: { userId } })
 
-  return res.json(notifiers)
+  // parse bigint to number
+  return res.send(JSON.stringify(notifiers, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
 app.post("/notifiers", jwtMiddleware, async (req, res) => {
@@ -219,13 +221,13 @@ app.post("/notifiers", jwtMiddleware, async (req, res) => {
 
   const { rule, message, chatId } = req.body
 
-
   const notifier = await prisma.notifier.create({
     data: {
       chatId,
       // @ts-ignore
       userId: user.id,
-      rule: JSON.stringify(rule),
+      // parse bigint to number
+      rule: JSON.stringify(rule, (_key, value) => typeof value === "bigint" ? Number(value) : value),
       message
     }
   })
@@ -236,27 +238,27 @@ app.post("/notifiers", jwtMiddleware, async (req, res) => {
     if (ev.message.text) {
       message = { type: "text", text: ev.message.text }
     } else if (ev.message.sticker) {
-      message = { type: "sticker", sticker: ev.message.sticker.getBytes().toString("base64") }
+      message = { type: "sticker", sticker: Number(ev.message.sticker?.id) }
     } else if (ev.message.media) {
       message = { type: "media", media: ev.message.media.getBytes().toString("base64") }
     } else {
       return
     }
 
-    if (rule.countMessages.includes(message)) {
+    if (rule.countMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
       const count = await redis.incr(`notifier:${notifier.id}`)
 
-      if (count === rule.count - 1) {
-        await bot.sendMessage(notifier.chatId, notifier.message)
+      if (count >= rule.count) {
+        await bot.sendMessage(Number(notifier.chatId), notifier.message)
 
         await redis.del(`notifier:${notifier.id}`)
       }
-    } else if (rule.resetMessages.includes(message)) {
+    } else if (rule.resetMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
       await redis.del(`notifier:${notifier.id}`)
     }
   }, new NewMessage({ chats: [notifier.chatId] }))
 
-  return res.json(notifier)
+  return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
 app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
@@ -268,7 +270,7 @@ app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
     }
   })
 
-  return res.json(notifier)
+  return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
 app.patch("/notifiers/:id", jwtMiddleware, async (req, res) => {
@@ -283,7 +285,7 @@ app.patch("/notifiers/:id", jwtMiddleware, async (req, res) => {
     }
   })
 
-  return res.json(notifier)
+  return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
 app.get("/notifiers/:id", jwtMiddleware, async (req, res) => {
@@ -295,21 +297,27 @@ app.get("/notifiers/:id", jwtMiddleware, async (req, res) => {
     }
   })
 
-  return res.json(notifier)
+  return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
 
 app.get("/chats", jwtMiddleware, async (req, res) => {
   // @ts-ignore
   const client = connections[req.user.phoneNumber]
+  let chats: any
 
-  const chats = await Promise.all((await client.getDialogs({ limit: Infinity })).map(async chat => ({
-    id: Number(chat.id),
-    name: chat.name || chat.title || "Unknown",
-    image: (await client.downloadProfilePhoto(chat.inputEntity))?.toString("base64")
-  })))
+  try {
+    chats = await Promise.all((await client.getDialogs({ limit: Infinity })).map(async chat => ({
+      id: Number(chat.id),
+      name: chat.name || chat.title || "Unknown",
+      image: (await client.downloadProfilePhoto(chat.inputEntity))?.toString("base64")
+    })))
+  } catch (e) {
+    console.log(e)
+    return
+  }
 
-  return res.json(chats)
+  return res.send(JSON.stringify(chats, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
 app.get("/chats/:id", jwtMiddleware, async (req, res) => {
@@ -320,11 +328,11 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
     id: Number(message.id),
     type: message.text ? "text" : message.sticker ? "sticker" : message.media ? "media" : "unknown",
     text: message.text ? message.text : undefined,
-    sticker: message.sticker?.getBytes().toString("base64"),
-    media: message.media?.getBytes().toString("base64")
+    sticker: message.sticker ? Number(message.sticker?.id) : undefined,
+    media: message.media ? message.media.getBytes().toString("base64") : undefined
   }))
 
-  return res.json(chat)
+  return res.send(JSON.stringify(chat, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
 process.on("exit", async () => {
@@ -343,7 +351,7 @@ interface TextMessage {
 
 interface StickerMessage {
   type: "sticker"
-  sticker: string
+  sticker: number
 }
 
 interface MediaMessage {
@@ -358,46 +366,59 @@ type Message = TextMessage | StickerMessage | MediaMessage
 
   const users = await prisma.user.findMany({ include: { notifiers: true } })
 
-  await Promise.all(users.map(async user => {
-    connections[user.phoneNumber] = new TelegramClient(
-      new StringSession(user.session),
-      parseInt(process.env.TELEGRAM_API_ID!),
-      process.env.TELEGRAM_API_HASH!,
-      { connectionRetries: 5 }
-    )
+  try {
+    await Promise.all(users.map(async user => {
+      connections[user.phoneNumber] = new TelegramClient(
+        new StringSession(user.session),
+        parseInt(process.env.TELEGRAM_API_ID!),
+        process.env.TELEGRAM_API_HASH!,
+        { connectionRetries: 5 }
+      )
 
-    await connections[user.phoneNumber].connect()
+      await connections[user.phoneNumber].start({
+        // @ts-ignore
+        phoneNumber: () => user.phoneNumber,
+        // @ts-ignore
+        password: () => user.password,
+        // @ts-ignore
+        phoneCode: () => user.phoneCode,
+        onError: e => console.log(e)
+      })
 
-    user.notifiers.forEach(notifier => {
-      const rule: { countMessages: Message[], resetMessages: Message[], count: number } = JSON.parse(notifier.rule)
+      user.notifiers.forEach(notifier => {
+        const rule: { countMessages: Message[], resetMessages: Message[], count: number } = JSON.parse(notifier.rule)
 
-      connections[user.phoneNumber].addEventHandler(async ev => {
-        let message: Message
+        connections[user.phoneNumber].addEventHandler(async ev => {
+          let message: Message
 
-        if (ev.message.text) {
-          message = { type: "text", text: ev.message.text }
-        } else if (ev.message.sticker) {
-          message = { type: "sticker", sticker: ev.message.sticker.getBytes().toString("base64") }
-        } else if (ev.message.media) {
-          message = { type: "media", media: ev.message.media.getBytes().toString("base64") }
-        } else {
-          return
-        }
+          if (ev.message.text) {
+            message = { type: "text", text: ev.message.text }
+          } else if (ev.message.sticker) {
+            message = { type: "sticker", sticker: Number(ev.message.sticker?.id) }
+          } else if (ev.message.media) {
+            message = { type: "media", media: ev.message.media.getBytes().toString("base64") }
+          } else {
+            return
+          }
 
-        if (rule.countMessages.includes(message)) {
-          const count = await redis.incr(`notifier:${notifier.id}`)
+          if (rule.countMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
+            const count = await redis.incr(`notifier:${notifier.id}`)
+            console.log(count, rule.count)
 
-          if (count === rule.count - 1) {
-            await bot.sendMessage(notifier.chatId, notifier.message)
+            if (count >= rule.count) {
+              await bot.sendMessage(Number(notifier.chatId), notifier.message)
 
+              await redis.del(`notifier:${notifier.id}`)
+            }
+          } else if (rule.resetMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
             await redis.del(`notifier:${notifier.id}`)
           }
-        } else if (rule.resetMessages.includes(message)) {
-          await redis.del(`notifier:${notifier.id}`)
-        }
-      }, new NewMessage({ chats: [notifier.chatId] }))
-    })
-  }))
+        }, new NewMessage({ chats: [notifier.chatId] }))
+      })
+    }))
+  } catch (e) {
+    console.log(e)
+  }
 
   const port = process.env.PORT ? parseInt(process.env.PORT) : 8000
 
