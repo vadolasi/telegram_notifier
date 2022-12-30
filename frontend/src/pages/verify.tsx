@@ -15,7 +15,7 @@ export default function (): JSX.Element {
   const socket = useRef<Socket>()
 
   useEffect(() => {
-    socket.current = io("http://localhost:8000", { transports: ["websocket", "polling"] })
+    socket.current = io(import.meta.env.VITE_BACKEND_URL, { transports: ["websocket", "polling"] })
 
     socket.current.on("connect", () => {
       setIsConnected(true)

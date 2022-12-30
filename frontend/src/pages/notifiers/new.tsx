@@ -9,12 +9,12 @@ import ReactMarkdown from "react-markdown"
 import toast from "react-hot-toast"
 import { useNavigate } from "react-router-dom"
 
-const fetcher = (url: string) => fetch(url, { headers: { "Content-Type": "application/json", Authorization: JSON.parse(localStorage.getItem("token")!) } }).then((res) => res.json()).then((data) => data)
+const fetcher = (url: string) => fetch(`${import.meta.env.VITE_BACKEND_URL}${url}`, { headers: { "Content-Type": "application/json", Authorization: JSON.parse(localStorage.getItem("token")!) } }).then((res) => res.json()).then((data) => data)
 
 export default function (): JSX.Element {
   const [chat, setChat] = useState<number | null>(null)
-  const { data: chats, error: chatsError } = useSWR("http://localhost:8000/chats", fetcher)
-  const { data: messages, error: messagesError } = useSWR(chat ? `http://localhost:8000/chats/${chat}` : undefined, fetcher)
+  const { data: chats, error: chatsError } = useSWR("/chats", fetcher)
+  const { data: messages, error: messagesError } = useSWR(chat ? `/chats/${chat}` : undefined, fetcher)
   const navigate = useNavigate()
   const [name, setName] = useState("")
   const [message, setMessage] = useState("")
@@ -70,7 +70,7 @@ export default function (): JSX.Element {
     }}
 
     try {
-      await fetch("http://localhost:8000/notifiers", {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/notifiers`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

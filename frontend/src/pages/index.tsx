@@ -1,10 +1,10 @@
 import { JSX } from "preact"
 import useSWR from "swr"
 
-const fetcher = (url: string) => fetch(url, { headers: { "Content-Type": "application/json", Authorization: JSON.parse(localStorage.getItem("token")!) } }).then((res) => res.json()).then((data) => data)
+const fetcher = (url: string) => fetch(`${import.meta.env.VITE_BACKEND_URL}${url}`, { headers: { "Content-Type": "application/json", Authorization: JSON.parse(localStorage.getItem("token")!) } }).then((res) => res.json()).then((data) => data)
 
 export default function (): JSX.Element {
-  const { data, error } = useSWR("http://localhost:8000/notifiers", fetcher)
+  const { data, error } = useSWR("/notifiers", fetcher)
 
   return (
     <div>
