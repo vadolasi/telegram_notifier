@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^2.9.10",
-    "axios": "^1.2.2",
     "preact": "^10.11.3",
     "react-hook-form": "^7.41.1",
     "react-hot-toast": "^2.4.0",

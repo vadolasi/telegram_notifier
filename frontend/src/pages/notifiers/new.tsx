@@ -11,13 +11,14 @@ import { useNavigate } from "react-router-dom"
 
 const schema = z.object({
   name: z.string().min(1).max(255),
-  chat: z.number().optional(),
-  messages: z.array(z.number()).optional(),
-  balcklistMessages: z.array(z.number()).optional(),
-  quantity: z.number().optional()
+  chat: z.number(),
+  messages: z.array(z.number()),
+  balcklistMessages: z.array(z.number()),
+  quantity: z.number(),
+  message: z.string()
 })
 
-const fetcher = (url: string) => fetch(url, { headers: { authorization: localStorage.getItem("token")! } }).then((res) => res.json())
+const fetcher = (url: string) => fetch(url, { headers: { "Content-Type": "application/json", Authorization: JSON.parse(localStorage.getItem("token")!) } }).then((res) => res.json()).then((data) => data)
 
 export default function (): JSX.Element {
   const [chat, setChat] = useState<number | null>(null)
@@ -31,11 +32,60 @@ export default function (): JSX.Element {
   })
 
   const onSubmit = async (data: any) => {
+    data.rule = {
+      count: data.quantity,
+      countMessages: data.messages.map((message: any) => {
+        const m = messages?.find((m: any) => m.id === message)
+
+        if (m.text) {
+          return {
+            type: "text",
+            text: m.text
+          }
+        } else if (m.media) {
+          return {
+            type: "media",
+            media: m.media
+          }
+        } else {
+          return {
+            type: "sticker",
+            sticker: m.sticker
+          }
+        }
+      }),
+      resetMessages: data.balcklistMessages.map((message: any) => {
+        const m = messages?.find((m: any) => m.id === message)
+
+        if (m.text) {
+          return {
+            type: "text",
+            text: m.text
+          }
+        } else if (m.media) {
+          return {
+            type: "media",
+            media: m.media
+          }
+        } else {
+          return {
+            type: "sticker",
+            sticker: m.sticker
+          }
+        }
+      })
+    }
+    data.chat = undefined
+    data.messages = undefined
+    data.balcklistMessages = undefined
+    data.quantity = undefined
+
     try {
       await fetch("http://localhost:8000/notifiers", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Auhtorization": JSON.parse(localStorage.getItem("token")!)
         },
         body: JSON.stringify(data)
       })
@@ -76,6 +126,11 @@ export default function (): JSX.Element {
           <label htmlFor="quantity">Quantity</label>
           <input type="number" id="quantity" {...register("quantity")} min={1} />
           {errors.quantity && <p>{errors.quantity.message}</p>}
+        </div>
+        <div className="flex items-center gap-4">
+          <label htmlFor="message">Message</label>
+          <input type="text" id="message" {...register("message")} />
+          {errors.message && <p>{errors.message.message}</p>}
         </div>
         <div>
           <button type="submit">Create</button>

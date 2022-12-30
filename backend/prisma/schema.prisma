@@ -15,9 +15,10 @@ model User {
 }
 
 model Notifier {
-  id     String @id @default(uuid())
-  chatId Int
-  rule   String
-  user   User   @relation(fields: [userId], references: [id])
-  userId BigInt
+  id      String @id @default(uuid())
+  chatId  Int
+  rule    String
+  message String
+  user    User   @relation(fields: [userId], references: [id])
+  userId  BigInt
 }

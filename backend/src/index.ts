@@ -1,13 +1,16 @@
-import { Server } from "hyper-express"
 import { TelegramClient } from "telegram"
 import { StringSession } from "telegram/sessions"
 import { PrismaClient } from "@prisma/client"
 import Redis from "ioredis"
 import { config } from "dotenv"
-import { Server as IO } from "socket.io"
+import { Server } from "socket.io"
 import jwt from "jsonwebtoken"
 import { randomUUID } from "crypto"
 import TelegramBot from "node-telegram-bot-api"
+import { NewMessage } from "telegram/events"
+import http from "http"
+import express from "express"
+import cors from "cors"
 
 config()
 
@@ -17,16 +20,12 @@ const prisma = new PrismaClient()
 
 const connections: { [key: string]: TelegramClient } = {}
 
-const app = new Server()
-const io = new IO({ cors: { origin: "*" } })
+const app = express()
+app.use(cors())
 
-app.use((_req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*")
+const server = http.createServer(app)
 
-  next()
-})
-
-io.attachApp(app.uws_instance)
+const io = new Server(server, { transports: ["websocket", "polling"], cors: { origin: "*" } })
 
 const JWT_SECRET = process.env.JWT_SECRET!
 
@@ -211,20 +210,53 @@ app.get("/notifiers", jwtMiddleware, async (req, res) => {
 
   const notifiers = await prisma.notifier.findMany({ where: { userId } })
 
-  res.json(notifiers)
+  return res.json(notifiers)
 })
 
 app.post("/notifiers", jwtMiddleware, async (req, res) => {
+  // @ts-ignore
+  const user = req.user
+
+  const { rule, message, chatId } = req.body
+
+
   const notifier = await prisma.notifier.create({
     data: {
-      chatId: parseInt(req.body.chatId),
+      chatId,
       // @ts-ignore
-      userId: req.user.id,
-      rule: req.body.rule
+      userId: user.id,
+      rule: JSON.stringify(rule),
+      message
     }
   })
 
-  res.json(notifier)
+  connections[user.phoneNumber].addEventHandler(async ev => {
+    let message: Message
+
+    if (ev.message.text) {
+      message = { type: "text", text: ev.message.text }
+    } else if (ev.message.sticker) {
+      message = { type: "sticker", sticker: ev.message.sticker.getBytes().toString("base64") }
+    } else if (ev.message.media) {
+      message = { type: "media", media: ev.message.media.getBytes().toString("base64") }
+    } else {
+      return
+    }
+
+    if (rule.countMessages.includes(message)) {
+      const count = await redis.incr(`notifier:${notifier.id}`)
+
+      if (count === rule.count - 1) {
+        await bot.sendMessage(notifier.chatId, notifier.message)
+
+        await redis.del(`notifier:${notifier.id}`)
+      }
+    } else if (rule.resetMessages.includes(message)) {
+      await redis.del(`notifier:${notifier.id}`)
+    }
+  }, new NewMessage({ chats: [notifier.chatId] }))
+
+  return res.json(notifier)
 })
 
 app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
@@ -236,7 +268,7 @@ app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
     }
   })
 
-  res.json(notifier)
+  return res.json(notifier)
 })
 
 app.patch("/notifiers/:id", jwtMiddleware, async (req, res) => {
@@ -251,7 +283,7 @@ app.patch("/notifiers/:id", jwtMiddleware, async (req, res) => {
     }
   })
 
-  res.json(notifier)
+  return res.json(notifier)
 })
 
 app.get("/notifiers/:id", jwtMiddleware, async (req, res) => {
@@ -263,7 +295,7 @@ app.get("/notifiers/:id", jwtMiddleware, async (req, res) => {
     }
   })
 
-  res.json(notifier)
+  return res.json(notifier)
 })
 
 
@@ -277,7 +309,7 @@ app.get("/chats", jwtMiddleware, async (req, res) => {
     image: (await client.downloadProfilePhoto(chat.inputEntity))?.toString("base64")
   })))
 
-  res.json(chats)
+  return res.json(chats)
 })
 
 app.get("/chats/:id", jwtMiddleware, async (req, res) => {
@@ -292,7 +324,7 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
     media: message.media?.getBytes().toString("base64")
   }))
 
-  res.json(chat)
+  return res.json(chat)
 })
 
 process.on("exit", async () => {
@@ -302,10 +334,74 @@ process.on("exit", async () => {
 })
 
 process.on("SIGTERM", () => process.exit())
+process.on("SIGINT", () => process.exit())
+
+interface TextMessage {
+  type: "text"
+  text: string
+}
+
+interface StickerMessage {
+  type: "sticker"
+  sticker: string
+}
+
+interface MediaMessage {
+  type: "media"
+  media: string
+}
+
+type Message = TextMessage | StickerMessage | MediaMessage
 
 ;(async () => {
   await prisma.$connect()
-  await app.listen(8000)
 
-  console.log("Listening on http://localhost:8000")
+  const users = await prisma.user.findMany({ include: { notifiers: true } })
+
+  await Promise.all(users.map(async user => {
+    connections[user.phoneNumber] = new TelegramClient(
+      new StringSession(user.session),
+      parseInt(process.env.TELEGRAM_API_ID!),
+      process.env.TELEGRAM_API_HASH!,
+      { connectionRetries: 5 }
+    )
+
+    await connections[user.phoneNumber].connect()
+
+    user.notifiers.forEach(notifier => {
+      const rule: { countMessages: Message[], resetMessages: Message[], count: number } = JSON.parse(notifier.rule)
+
+      connections[user.phoneNumber].addEventHandler(async ev => {
+        let message: Message
+
+        if (ev.message.text) {
+          message = { type: "text", text: ev.message.text }
+        } else if (ev.message.sticker) {
+          message = { type: "sticker", sticker: ev.message.sticker.getBytes().toString("base64") }
+        } else if (ev.message.media) {
+          message = { type: "media", media: ev.message.media.getBytes().toString("base64") }
+        } else {
+          return
+        }
+
+        if (rule.countMessages.includes(message)) {
+          const count = await redis.incr(`notifier:${notifier.id}`)
+
+          if (count === rule.count - 1) {
+            await bot.sendMessage(notifier.chatId, notifier.message)
+
+            await redis.del(`notifier:${notifier.id}`)
+          }
+        } else if (rule.resetMessages.includes(message)) {
+          await redis.del(`notifier:${notifier.id}`)
+        }
+      }, new NewMessage({ chats: [notifier.chatId] }))
+    })
+  }))
+
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 8000
+
+  server.listen(port, () => {
+    console.log("http://localhost:" + port)
+  })
 })()

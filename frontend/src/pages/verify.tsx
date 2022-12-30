@@ -4,7 +4,7 @@ import io from "socket.io-client"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { useLocalStorage } from "../../utils"
 
-const socket = io("http://localhost:8000")
+const socket = io("http://localhost:8000", { transports: ["websocket", "polling"] })
 
 export default function (): JSX.Element {
   const [isConnected, setIsConnected] = useState(socket.connected)

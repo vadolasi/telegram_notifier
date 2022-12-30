@@ -12,6 +12,7 @@ CREATE TABLE "Notifier" (
     "id" STRING NOT NULL,
     "chatId" INT4 NOT NULL,
     "rule" STRING NOT NULL,
+    "message" STRING NOT NULL,
     "userId" INT8 NOT NULL,
 
     CONSTRAINT "Notifier_pkey" PRIMARY KEY ("id")
