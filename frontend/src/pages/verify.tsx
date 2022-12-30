@@ -1,44 +1,47 @@
 import { JSX } from "preact"
-import { useEffect, useState } from "preact/hooks"
-import io from "socket.io-client"
+import { useEffect, useRef, useState } from "preact/hooks"
+import io, { Socket } from "socket.io-client"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { useLocalStorage } from "../../utils"
 
-const socket = io("http://localhost:8000", { transports: ["websocket", "polling"] })
-
 export default function (): JSX.Element {
-  const [isConnected, setIsConnected] = useState(socket.connected)
+  const [isConnected, setIsConnected] = useState(false)
   const [searchParams] = useSearchParams()
   const [code, setCode] = useState("")
   const [requestPassword, setRequestPassword] = useState(false)
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
   const [, setToken] = useLocalStorage("token")
+  const socket = useRef<Socket>()
 
   useEffect(() => {
-    socket.on("connect", () => {
+    socket.current = io("http://localhost:8000", { transports: ["websocket", "polling"] })
+
+    socket.current.on("connect", () => {
       setIsConnected(true)
 
-      socket.emit("verify", searchParams.get("phone"))
+      socket.current?.emit("verify", searchParams.get("phone"))
     })
 
-    socket.on("disconnect", () => {
+    socket.current.on("disconnect", () => {
       setIsConnected(false)
     })
 
-    socket.on("password", () => {
+    socket.current.on("password", () => {
       setRequestPassword(true)
     })
 
-    socket.on("success", (token: string) => {
+    socket.current.on("success", (token: string) => {
       setToken(token)
       navigate("/success")
     })
 
     return () => {
-      socket.off("connect")
-      socket.off("disconnect")
-      socket.off("pong")
+      socket.current?.off("connect")
+      socket.current?.off("disconnect")
+      socket.current?.off("password")
+      socket.current?.off("success")
+      socket.current?.disconnect()
     }
   }, [])
 
@@ -50,13 +53,13 @@ export default function (): JSX.Element {
             <>
               <label htmlFor="password">Password</label>
               <input type="password" id="password" value={password} onChange={(e) => setPassword((e.target as any).value)} />
-              <button onClick={() => socket.emit("password", password)}>Verify</button>
+              <button onClick={() => socket.current?.emit("password", password)}>Verify</button>
             </>
           ) : (
             <>
               <label htmlFor="code">Code</label>
               <input type="number" id="code" value={code} onChange={(e) => setCode((e.target as any).value)} />
-              <button onClick={() => socket.emit("code", code)}>Verify</button>
+              <button onClick={() => socket.current?.emit("code", code)}>Verify</button>
             </>
           )}
         </>

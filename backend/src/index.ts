@@ -249,7 +249,7 @@ app.post("/notifiers", jwtMiddleware, async (req, res) => {
       const count = await redis.incr(`notifier:${notifier.id}`)
 
       if (count >= rule.count) {
-        await bot.sendMessage(Number(notifier.chatId), notifier.message)
+        await bot.sendMessage(Number(user.id), notifier.message)
 
         await redis.del(`notifier:${notifier.id}`)
       }
@@ -403,10 +403,9 @@ type Message = TextMessage | StickerMessage | MediaMessage
 
           if (rule.countMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
             const count = await redis.incr(`notifier:${notifier.id}`)
-            console.log(count, rule.count)
 
             if (count >= rule.count) {
-              await bot.sendMessage(Number(notifier.chatId), notifier.message)
+              await bot.sendMessage(Number(user.id), notifier.message)
 
               await redis.del(`notifier:${notifier.id}`)
             }
