@@ -1,12 +1,10 @@
 import { JSX } from "preact"
 import { useEffect, useState } from "preact/hooks"
 import io from "socket.io-client"
-import parser from "socket.io-msgpack-parser"
 import { useSearchParams, useNavigate } from "react-router-dom"
+import { useLocalStorage } from "../../utils"
 
-const socket = io("http://localhost:8000", { transports: ["websocket", "polling"] })
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const socket = io("http://localhost:8000")
 
 export default function (): JSX.Element {
   const [isConnected, setIsConnected] = useState(socket.connected)
@@ -15,6 +13,7 @@ export default function (): JSX.Element {
   const [requestPassword, setRequestPassword] = useState(false)
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
+  const [, setToken] = useLocalStorage("token")
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -31,7 +30,8 @@ export default function (): JSX.Element {
       setRequestPassword(true)
     })
 
-    socket.on("success", () => {
+    socket.on("success", (token: string) => {
+      setToken(token)
       navigate("/success")
     })
 

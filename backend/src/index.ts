@@ -1,15 +1,13 @@
 import { Server } from "hyper-express"
 import { TelegramClient } from "telegram"
-import { Button } from "telegram/tl/custom/button"
 import { StringSession } from "telegram/sessions"
 import { PrismaClient } from "@prisma/client"
-import { readFileSync } from "fs"
 import Redis from "ioredis"
 import { config } from "dotenv"
-import { NewMessage } from "telegram/events"
 import { Server as IO } from "socket.io"
-import parser from "socket.io-msgpack-parser"
 import jwt from "jsonwebtoken"
+import { randomUUID } from "crypto"
+import TelegramBot from "node-telegram-bot-api"
 
 config()
 
@@ -20,7 +18,7 @@ const prisma = new PrismaClient()
 const connections: { [key: string]: TelegramClient } = {}
 
 const app = new Server()
-const io = new IO({ cors: { origin: "*" }, transports: ["websocket", "polling"] })
+const io = new IO({ cors: { origin: "*" } })
 
 app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*")
@@ -30,8 +28,61 @@ app.use((_req, res, next) => {
 
 io.attachApp(app.uws_instance)
 
+const JWT_SECRET = process.env.JWT_SECRET!
+
+const jwtMiddleware = (req, res, next) => {
+  const token = req.headers.authorization
+
+  if (!token) {
+    res.status(401).send("Unauthorized")
+
+    return
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET)
+
+    req.user = decoded
+
+    next()
+  } catch (error) {
+    res.status(401).send("Unauthorized")
+  }
+}
+
 io.on("connection", (socket) => {
   socket.on("verify", async (phoneNumber: string) => {
+    phoneNumber = phoneNumber.replace(" ", "+")
+
+    if (connections[phoneNumber]) {
+      socket.emit("alreadyConnected")
+
+      const user = (await prisma.user.findUnique({
+        where: {
+          phoneNumber
+        }
+      }))!
+
+      const code = randomUUID()
+
+      await redis.set(code, user.phoneNumber)
+
+      await bot.sendMessage(
+        Number(user.id),
+        "Foi detectado que você está tentando fazer login, se você não fez isso, ignore esta mensagem. Para prosseguir, clique no botão abaixo.",
+        { reply_markup: { inline_keyboard: [
+          [
+            {
+              text: "Prosseguir",
+              url: `${process.env.FRONTEND_URL!}/verify?code=${code}`
+            }
+          ]
+        ]}}
+      )
+
+      return
+    }
+
     connections[phoneNumber] = new TelegramClient(
       new StringSession(""),
       parseInt(process.env.TELEGRAM_API_ID!),
@@ -60,45 +111,115 @@ io.on("connection", (socket) => {
 
     if (hasError) return
 
-    socket.emit("success", jwt.sign({ phoneNumber }, process.env.JWT_SECRET!))
+    const id = Number(await connections[phoneNumber].getPeerId("me"))
+
+    await prisma.user.create({
+      data: {
+        id,
+        phoneNumber,
+        // @ts-ignore
+        session: connections[phoneNumber].session.save()
+      }
+    })
+
+    socket.emit("success", jwt.sign({ phoneNumber, id }, process.env.JWT_SECRET!))
+
+    await bot.sendMessage(
+      id,
+      "Cadastro concluido com sucesso! Clique no botão abaixo paara acessar o painel",
+      { reply_markup: { inline_keyboard: [
+        [
+          {
+            text: "Acessar painel",
+            url: `${process.env.FRONTEND_URL!}/`
+          }
+        ]
+      ]}}
+    )
   })
 })
 
-const bot = new TelegramClient(
-  new StringSession(readFileSync("session.txt", "utf-8")),
-  parseInt(process.env.TELEGRAM_API_ID!),
-  process.env.TELEGRAM_API_HASH!,
-  {
-    connectionRetries: 5
-  }
-)
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN!, { polling: true })
 
-bot.addEventHandler(async event => {
-  if (event.message.message.startsWith("/start")) {
-    // send a button to get user contact
-    await bot.sendMessage(event.chatId!, {
-      message: "Olá! Para começar a usar o bot, por favor me clique no botão abaixo e envie seu contato.",
-      buttons: [
-        Button.requestPhone("Enviar contato")
+bot.onText(/\/start/, async (msg) => {
+  if (await prisma.user.findUnique({ where: { id: Number(msg.chat.id) } })) {
+    await bot.sendMessage(
+      msg.chat.id,
+      "Você já está cadastrado! Para acessar o painel, clique no botão abaixo.",
+      { reply_markup: { inline_keyboard: [
+        [
+          {
+            text: "Acessar painel",
+            url: `${process.env.FRONTEND_URL!}/`
+          }
+        ]
+      ]}}
+    )
+
+    return
+  }
+
+  await bot.sendMessage(
+    msg.chat.id,
+    "Olá! Para começar a usar o bot, por favor me clique no botão abaixo e envie seu contato.",
+    { reply_markup: { keyboard: [
+      [
+        {
+          text: "Enviar contato",
+          request_contact: true
+        }
       ]
-    })
-  } else if (event.message.contact) {
-    await bot.sendMessage(event.chatId!, {
-      message: `Para prosseguir, entre neste link: ${process.env.FRONTEND_URL!}/verify?phone=${event.message.contact.phoneNumber}`
-    })
-  }
-}, new NewMessage({}))
+    ]}}
+  )
+})
 
-app.get("/notifiers", async (_req, res) => {
-  const notifiers = await prisma.notifier.findMany()
+bot.on("message", async (msg) => {
+  if (msg.contact) {
+   if (await prisma.user.findUnique({ where: { id: Number(msg.chat.id) } })) {
+      await bot.sendMessage(
+        msg.chat.id,
+        "Você já está cadastrado! Para acessar o painel, clique no botão abaixo.",
+        { reply_markup: { inline_keyboard: [
+          [
+            {
+              text: "Acessar painel",
+              url: `${process.env.FRONTEND_URL!}/`
+            }
+          ]
+        ]}}
+      )
+    } else {
+      await bot.sendMessage(
+        msg.chat.id,
+        "Para prosseguir, clique no botão abaixo:",
+        { reply_markup: { inline_keyboard: [
+          [
+            {
+              text: "Prosseguir",
+              url: `${process.env.FRONTEND_URL!}/verify?phone=${msg.contact!.phone_number}`
+            }
+          ]
+        ]}}
+      )
+    }
+  }
+})
+
+app.get("/notifiers", jwtMiddleware, async (req, res) => {
+  // @ts-ignore
+  const userId = req.user.id
+
+  const notifiers = await prisma.notifier.findMany({ where: { userId } })
 
   res.json(notifiers)
 })
 
-app.post("/notifiers", async (req, res) => {
+app.post("/notifiers", jwtMiddleware, async (req, res) => {
   const notifier = await prisma.notifier.create({
     data: {
       chatId: parseInt(req.body.chatId),
+      // @ts-ignore
+      userId: req.user.id,
       rule: req.body.rule
     }
   })
@@ -106,20 +227,24 @@ app.post("/notifiers", async (req, res) => {
   res.json(notifier)
 })
 
-app.delete("/notifiers/:id", async (req, res) => {
-  const notifier = await prisma.notifier.delete({
+app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
+  const notifier = await prisma.notifier.deleteMany({
     where: {
-      id: req.params.id
+      id: req.params.id,
+      // @ts-ignore
+      userId: req.user.id
     }
   })
 
   res.json(notifier)
 })
 
-app.patch("/notifiers/:id", async (req, res) => {
-  const notifier = await prisma.notifier.update({
+app.patch("/notifiers/:id", jwtMiddleware, async (req, res) => {
+  const notifier = await prisma.notifier.updateMany({
     where: {
-      id: req.params.id
+      id: req.params.id,
+      // @ts-ignore
+      userId: req.user.id
     },
     data: {
       chatId: parseInt(req.body.chatId)
@@ -129,10 +254,12 @@ app.patch("/notifiers/:id", async (req, res) => {
   res.json(notifier)
 })
 
-app.get("/notifiers/:id", async (req, res) => {
-  const notifier = await prisma.notifier.findUnique({
+app.get("/notifiers/:id", jwtMiddleware, async (req, res) => {
+  const notifier = await prisma.notifier.findFirst({
     where: {
-      id: req.params.id
+      id: req.params.id,
+      // @ts-ignore
+      userId: req.user.id
     }
   })
 
@@ -140,8 +267,10 @@ app.get("/notifiers/:id", async (req, res) => {
 })
 
 
-/*
-app.get("/chats", async (_req, res) => {
+app.get("/chats", jwtMiddleware, async (req, res) => {
+  // @ts-ignore
+  const client = connections[req.user.phoneNumber]
+
   const chats = await Promise.all((await client.getDialogs({ limit: Infinity })).map(async chat => ({
     id: Number(chat.id),
     name: chat.name || chat.title || "Unknown",
@@ -150,10 +279,11 @@ app.get("/chats", async (_req, res) => {
 
   res.json(chats)
 })
-*/
 
-/*
-app.get("/chats/:id", async (req, res) => {
+app.get("/chats/:id", jwtMiddleware, async (req, res) => {
+  // @ts-ignore
+  const client = connections[req.user.phoneNumber]
+
   const chat = (await client.getMessages(parseInt(req.params.id), { limit: 30, offsetId: req.query.offsetId ? parseInt(req.query.offsetId as string) : undefined })).map(message => ({
     id: Number(message.id),
     type: message.text ? "text" : message.sticker ? "sticker" : message.media ? "media" : "unknown",
@@ -164,14 +294,17 @@ app.get("/chats/:id", async (req, res) => {
 
   res.json(chat)
 })
-*/
+
+process.on("exit", async () => {
+  await prisma.$disconnect()
+  await bot.logOut()
+  await bot.close()
+})
+
+process.on("SIGTERM", () => process.exit())
 
 ;(async () => {
-  await bot.start({
-    botAuthToken: process.env.TELEGRAM_BOT_TOKEN!
-  })
-  bot.setParseMode("html")
-
+  await prisma.$connect()
   await app.listen(8000)
 
   console.log("Listening on http://localhost:8000")

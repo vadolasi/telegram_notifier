@@ -8,10 +8,10 @@ datasource db {
 }
 
 model User {
-  id        String @id @default(uuid())
-  number    Int    @unique
-  session   String
-  notifiers Notifier[]
+  id          BigInt @id
+  phoneNumber String @unique
+  session     String
+  notifiers   Notifier[]
 }
 
 model Notifier {
@@ -19,5 +19,5 @@ model Notifier {
   chatId Int
   rule   String
   user   User   @relation(fields: [userId], references: [id])
-  userId String
+  userId BigInt
 }

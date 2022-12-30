@@ -15,7 +15,8 @@
     "@types/node-telegram-bot-api": "^0.57.6",
     "nodemon": "^2.0.20",
     "prisma": "^4.8.0",
-    "sucrase": "^3.29.0"
+    "sucrase": "^3.29.0",
+    "ts-node": "^10.9.1"
   },
   "dependencies": {
     "@prisma/client": "^4.8.0",
@@ -26,7 +27,6 @@
     "jsonwebtoken": "^9.0.0",
     "node-telegram-bot-api": "^0.60.0",
     "socket.io": "^4.5.4",
-    "socket.io-msgpack-parser": "^3.0.2",
     "telegram": "^2.15.2"
   }
 }

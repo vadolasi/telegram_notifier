@@ -1,7 +1,8 @@
 import { JSX } from "preact"
 import useSWR from "swr"
+import axios from "axios"
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const fetcher = (url: string) => axios.get(url, { headers: { authorization: localStorage.getItem("token")! } }).then((res) => res.data)
 
 export default function (): JSX.Element {
   const { data, error } = useSWR("http://localhost:8000/notifiers", fetcher)

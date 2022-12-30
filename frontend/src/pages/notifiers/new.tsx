@@ -17,7 +17,7 @@ const schema = z.object({
   quantity: z.number().optional()
 })
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const fetcher = (url: string) => fetch(url, { headers: { authorization: localStorage.getItem("token")! } }).then((res) => res.json())
 
 export default function (): JSX.Element {
   const [chat, setChat] = useState<number | null>(null)
