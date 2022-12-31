@@ -307,7 +307,7 @@ app.get("/chats", jwtMiddleware, async (req, res) => {
   let chats: any
 
   try {
-    chats = await Promise.all((await client.getDialogs({ limit: Infinity })).map(async chat => ({
+    chats = await Promise.all((await client.getDialogs({ limit: 100 })).map(async chat => ({
       id: Number(chat.id),
       name: chat.name || chat.title || "Unknown",
       image: (await client.downloadProfilePhoto(chat.inputEntity))?.toString("base64")
