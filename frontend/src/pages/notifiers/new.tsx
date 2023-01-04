@@ -21,12 +21,14 @@ export default function (): JSX.Element {
   const [quantity, setQuantity] = useState(0)
   const [messagesSelected, setMessagesSelected] = useState([])
   const [balcklistMessagesSelected, setBalcklistMessagesSelected] = useState([])
+  const [continuos, setContinuos] = useState(false)
 
   const onSubmit = async (ev: any) => {
     ev.preventDefault()
 
     const data = { name, chatId: chat, message, rule: {
       count: quantity,
+      continuos: continuos ? true : undefined,
       countMessages: messagesSelected.map((message: any) => {
         const m = messages?.find((m: any) => m.id === message)
 
@@ -103,9 +105,15 @@ export default function (): JSX.Element {
                 <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker || message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setMessagesSelected(e.map((m: any) => m.value))} />
               </div>
               <div>
-                <label htmlFor="balcklistMessage">Balcklist Message</label>
-                <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown>{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
+                <label htmlFor="continuos">Apenas mensagens em seguida</label>
+                <input type="checkbox" id="continuos" onChange={(e) => setContinuos((e.target as any).checked)} />
               </div>
+              {!continuos && (
+                <div>
+                  <label htmlFor="balcklistMessage">Balcklist Message</label>
+                  <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown>{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
+                </div>
+              )}
             </>
           )}
         </div>

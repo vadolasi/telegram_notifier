@@ -419,7 +419,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
       })
 
       user.notifiers.forEach(notifier => {
-        const rule: { countMessages: Message[], resetMessages: Message[], count: number } = JSON.parse(notifier.rule)
+        const rule: { countMessages: Message[], resetMessages?: Message[], count: number, continuos?: boolean } = JSON.parse(notifier.rule)
 
         connections[user.phoneNumber].addEventHandler(async ev => {
           let message: Message
@@ -442,7 +442,9 @@ type Message = TextMessage | StickerMessage | MediaMessage
 
               await redis.del(`notifier:${notifier.id}`)
             }
-          } else if (rule.resetMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
+          } else if (rule.continuos) {
+            await redis.del(`notifier:${notifier.id}`)
+          } else if (rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message))) {
             await redis.del(`notifier:${notifier.id}`)
           }
         }, new NewMessage({ chats: [Number(notifier.chatId)] }))
