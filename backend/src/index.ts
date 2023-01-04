@@ -8,9 +8,10 @@ import jwt from "jsonwebtoken"
 import { randomUUID } from "crypto"
 import TelegramBot from "node-telegram-bot-api"
 import { NewMessage } from "telegram/events"
-import http from "http"
 import express from "express"
 import cors from "cors"
+import https from "https"
+import { readFileSync } from "fs"
 
 config()
 
@@ -24,7 +25,10 @@ const app = express()
 app.use(express.json())
 app.use(cors())
 
-const server = http.createServer(app)
+const server = https.createServer({
+  key: readFileSync("client-key.pem"),
+  cert: readFileSync("client-cert.pem"),
+}, app)
 
 const io = new Server(server, { transports: ["websocket", "polling"], cors: { origin: "*" } })
 
@@ -219,11 +223,12 @@ app.post("/notifiers", jwtMiddleware, async (req, res) => {
   // @ts-ignore
   const user = req.user
 
-  const { rule, message, chatId } = req.body
+  const { rule, message, chatId, name } = req.body
 
   const notifier = await prisma.notifier.create({
     data: {
       chatId,
+      name,
       // @ts-ignore
       userId: user.id,
       // parse bigint to number
@@ -256,7 +261,7 @@ app.post("/notifiers", jwtMiddleware, async (req, res) => {
     } else if (rule.resetMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
       await redis.del(`notifier:${notifier.id}`)
     }
-  }, new NewMessage({ chats: [notifier.chatId] }))
+  }, new NewMessage({ chats: [Number(notifier.chatId)] }))
 
   return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
@@ -300,6 +305,34 @@ app.get("/notifiers/:id", jwtMiddleware, async (req, res) => {
   return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
+app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
+  const notifier = await prisma.notifier.deleteMany({
+    where: {
+      id: req.params.id,
+      // @ts-ignore
+      userId: req.user.id
+    }
+  })
+
+  return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
+})
+
+app.patch("/notifiers/:id", jwtMiddleware, async (req, res) => {
+  const notifier = await prisma.notifier.updateMany({
+    where: {
+      id: req.params.id,
+      // @ts-ignore
+      userId: req.user.id
+    },
+    data: {
+      chatId: parseInt(req.body.chatId),
+      rule: JSON.stringify(req.body.rule, (_key, value) => typeof value === "bigint" ? Number(value) : value),
+      message: req.body.message
+    }
+  })
+
+  return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
+})
 
 app.get("/chats", jwtMiddleware, async (req, res) => {
   // @ts-ignore
@@ -412,7 +445,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
           } else if (rule.resetMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
             await redis.del(`notifier:${notifier.id}`)
           }
-        }, new NewMessage({ chats: [notifier.chatId] }))
+        }, new NewMessage({ chats: [Number(notifier.chatId)] }))
       })
     }))
   } catch (e) {
@@ -422,6 +455,6 @@ type Message = TextMessage | StickerMessage | MediaMessage
   const port = process.env.PORT ? parseInt(process.env.PORT) : 8000
 
   server.listen(port, () => {
-    console.log("http://localhost:" + port)
+    console.log("https://localhost:" + port)
   })
 })()

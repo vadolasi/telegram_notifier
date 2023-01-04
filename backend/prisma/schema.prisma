@@ -16,6 +16,7 @@ model User {
 
 model Notifier {
   id      String @id @default(uuid())
+  name    String
   chatId  BigInt
   rule    String
   message String

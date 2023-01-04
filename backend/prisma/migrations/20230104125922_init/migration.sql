@@ -10,6 +10,7 @@ CREATE TABLE "User" (
 -- CreateTable
 CREATE TABLE "Notifier" (
     "id" STRING NOT NULL,
+    "name" STRING NOT NULL,
     "chatId" INT8 NOT NULL,
     "rule" STRING NOT NULL,
     "message" STRING NOT NULL,
