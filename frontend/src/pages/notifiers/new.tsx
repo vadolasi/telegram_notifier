@@ -1,8 +1,5 @@
 import { JSX } from "preact"
 import useSWR from "swr"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
 import { useState } from "preact/hooks"
 import Select from "react-select"
 import ReactMarkdown from "react-markdown"
@@ -22,6 +19,9 @@ export default function (): JSX.Element {
   const [messagesSelected, setMessagesSelected] = useState([])
   const [balcklistMessagesSelected, setBalcklistMessagesSelected] = useState([])
   const [continuos, setContinuos] = useState(false)
+  const [includesText, setIncludesText] = useState(false)
+  const [matchMessage, setMatchMessage] = useState(false)
+  const [textIncludes, setTextIncludes] = useState("")
 
   const onSubmit = async (ev: any) => {
     ev.preventDefault()
@@ -29,6 +29,7 @@ export default function (): JSX.Element {
     const data = { name, chatId: chat, message, rule: {
       count: quantity,
       continuos: continuos ? true : undefined,
+      includesText: includesText ? includesText : undefined,
       countMessages: messagesSelected.map((message: any) => {
         const m = messages?.find((m: any) => m.id === message)
 
@@ -104,14 +105,30 @@ export default function (): JSX.Element {
                 <label htmlFor="message">Message</label>
                 <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker || message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setMessagesSelected(e.map((m: any) => m.value))} />
               </div>
-              <div>
-                <label htmlFor="continuos">Apenas mensagens em seguida</label>
-                <input type="checkbox" id="continuos" onChange={() => setContinuos(!continuos)} />
-              </div>
-              {!continuos && (
+              <fieldset>
+                <div>
+                  <input type="radio" id="continuos" onChange={() => setContinuos(!continuos)} />
+                  <label htmlFor="continuos">Apenas mensagens em seguida</label>
+                </div>
+                <div>
+                  <input type="radio" id="matchText" onChange={() => setIncludesText(!includesText)} />
+                  <label htmlFor="matchText">Contém texto</label>
+                </div>
+                <div>
+                  <input type="radio" id="igual" onChange={() => setMatchMessage(!matchMessage)} />
+                  <label htmlFor="igual">Não contém texto</label>
+                </div>
+              </fieldset>
+              {matchMessage && (
                 <div>
                   <label htmlFor="balcklistMessage">Balcklist Message</label>
                   <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown>{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
+                </div>
+              )}
+              {includesText && (
+                <div>
+                  <label htmlFor="text">Text</label>
+                  <input type="text" id="text" onChange={(e) => setTextIncludes((e.target as any).value)} />
                 </div>
               )}
             </>

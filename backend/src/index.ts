@@ -248,21 +248,6 @@ app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
   return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
-app.patch("/notifiers/:id", jwtMiddleware, async (req, res) => {
-  const notifier = await prisma.notifier.updateMany({
-    where: {
-      id: req.params.id,
-      // @ts-ignore
-      userId: req.user.id
-    },
-    data: {
-      chatId: parseInt(req.body.chatId)
-    }
-  })
-
-  return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
-})
-
 app.get("/notifiers/:id", jwtMiddleware, async (req, res) => {
   const notifier = await prisma.notifier.findFirst({
     where: {
@@ -281,23 +266,6 @@ app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
       id: req.params.id,
       // @ts-ignore
       userId: req.user.id
-    }
-  })
-
-  return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
-})
-
-app.patch("/notifiers/:id", jwtMiddleware, async (req, res) => {
-  const notifier = await prisma.notifier.updateMany({
-    where: {
-      id: req.params.id,
-      // @ts-ignore
-      userId: req.user.id
-    },
-    data: {
-      chatId: parseInt(req.body.chatId),
-      rule: JSON.stringify(req.body.rule, (_key, value) => typeof value === "bigint" ? Number(value) : value),
-      message: req.body.message
     }
   })
 
@@ -399,7 +367,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
 
         if (!notifier) return
 
-        const rule: { countMessages: Message[], resetMessages?: Message[], count: number, continuos?: boolean } = JSON.parse(notifier.rule)
+        const rule: { countMessages: Message[], includesText?: string, resetMessages?: Message[], count: number, continuos?: boolean } = JSON.parse(notifier.rule)
 
         let message: Message
 
@@ -413,7 +381,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
           return
         }
 
-        if (rule.countMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
+        if ((rule.includesText && ev.message.text?.includes(rule.includesText)) || (rule.countMessages.find(m => JSON.stringify(m) === JSON.stringify(message)))) {
           const count = await redis.incr(`notifier:${notifier.id}`)
 
           if (count >= rule.count) {
