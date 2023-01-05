@@ -103,12 +103,12 @@ export default function (): JSX.Element {
             <>
               <h2>Gatilhos</h2>
               <fieldset>
-                <label htmlFor="continuos">
-                  <input type="radio" id="continuos" onChange={() => {setIncludesText(true);setMatchMessage(false)}} checked={continuos} value="1" />
+                <label htmlFor="include">
+                  <input type="radio" id="include" onChange={() => {setIncludesText(true);setMatchMessage(false)}} checked={includesText} value="1" />
                   Contém texto
                 </label>
-                <label htmlFor="matchText">
-                  <input type="radio" id="matchText" onChange={() =>{setIncludesText(false);setMatchMessage(true)}} checked={includesText} value="2" />
+                <label htmlFor="exact">
+                  <input type="radio" id="exact" onChange={() =>{setIncludesText(false);setMatchMessage(true)}} checked={matchMessage} value="2" />
                   Igual à mensagem
                 </label>
               </fieldset>
@@ -125,7 +125,7 @@ export default function (): JSX.Element {
                   Apenas mensagens em seguida
                 </label>
                 <label htmlFor="igual">
-                  <input type="radio" id="igual" onChange={() => {setContinuos(false);setBlacklistMessage(true)}} checked={includesText} value="2" />
+                  <input type="radio" id="igual" onChange={() => {setContinuos(false);setBlacklistMessage(true)}} checked={blacklistMessage} value="2" />
                   Blacklist de mensagens
                 </label>
               </fieldset>
