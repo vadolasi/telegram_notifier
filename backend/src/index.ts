@@ -10,8 +10,7 @@ import TelegramBot from "node-telegram-bot-api"
 import { NewMessage } from "telegram/events"
 import express from "express"
 import cors from "cors"
-import http from "https"
-import { readFileSync } from "fs"
+import http from "http"
 
 config()
 
@@ -454,6 +453,6 @@ type Message = TextMessage | StickerMessage | MediaMessage
   const port = process.env.PORT ? parseInt(process.env.PORT) : 8000
 
   server.listen(port, () => {
-    console.log("https://localhost:" + port)
+    console.log("http://localhost:" + port)
   })
 })()
