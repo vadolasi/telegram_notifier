@@ -106,7 +106,7 @@ export default function (): JSX.Element {
               </div>
               <div>
                 <label htmlFor="continuos">Apenas mensagens em seguida</label>
-                <input type="checkbox" id="continuos" onChange={(e) => setContinuos((e.target as any).checked)} />
+                <input type="checkbox" id="continuos" onChange={() => setContinuos(!continuos)} />
               </div>
               {!continuos && (
                 <div>

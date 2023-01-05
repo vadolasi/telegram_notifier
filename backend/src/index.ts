@@ -414,37 +414,45 @@ type Message = TextMessage | StickerMessage | MediaMessage
         onError: e => console.log(e)
       })
 
-      user.notifiers.forEach(notifier => {
+      connections[user.phoneNumber].addEventHandler(async ev => {
+        const notifier = await prisma.notifier.findFirst({
+          where: {
+            chatId: Number(ev.message.chatId),
+            // @ts-ignore
+            userId: user.id
+          }
+        })
+
+        if (!notifier) return
+
         const rule: { countMessages: Message[], resetMessages?: Message[], count: number, continuos?: boolean } = JSON.parse(notifier.rule)
 
-        connections[user.phoneNumber].addEventHandler(async ev => {
-          let message: Message
+        let message: Message
 
-          if (ev.message.text) {
-            message = { type: "text", text: ev.message.text }
-          } else if (ev.message.sticker) {
-            message = { type: "sticker", sticker: Number(ev.message.sticker?.id) }
-          } else if (ev.message.media) {
-            message = { type: "media", media: ev.message.media.getBytes().toString("base64") }
-          } else {
-            return
-          }
+        if (ev.message.text) {
+          message = { type: "text", text: ev.message.text }
+        } else if (ev.message.sticker) {
+          message = { type: "sticker", sticker: Number(ev.message.sticker?.id) }
+        } else if (ev.message.media) {
+          message = { type: "media", media: ev.message.media.getBytes().toString("base64") }
+        } else {
+          return
+        }
 
-          if (rule.countMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
-            const count = await redis.incr(`notifier:${notifier.id}`)
+        if (rule.countMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
+          const count = await redis.incr(`notifier:${notifier.id}`)
 
-            if (count >= rule.count) {
-              await bot.sendMessage(Number(user.id), notifier.message)
+          if (count >= rule.count) {
+            await bot.sendMessage(Number(user.id), notifier.message)
 
-              await redis.del(`notifier:${notifier.id}`)
-            }
-          } else if (rule.continuos) {
-            await redis.del(`notifier:${notifier.id}`)
-          } else if (rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message))) {
             await redis.del(`notifier:${notifier.id}`)
           }
-        }, new NewMessage({ chats: [Number(notifier.chatId)] }))
-      })
+        } else if (rule.continuos) {
+          await redis.del(`notifier:${notifier.id}`)
+        } else if (rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message))) {
+          await redis.del(`notifier:${notifier.id}`)
+        }
+      }, new NewMessage())
     }))
   } catch (e) {
     console.log(e)
