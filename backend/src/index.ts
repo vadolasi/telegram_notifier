@@ -10,7 +10,7 @@ import TelegramBot from "node-telegram-bot-api"
 import { NewMessage } from "telegram/events"
 import express from "express"
 import cors from "cors"
-import https from "https"
+import http from "https"
 import { readFileSync } from "fs"
 
 config()
@@ -25,10 +25,7 @@ const app = express()
 app.use(express.json())
 app.use(cors())
 
-const server = https.createServer({
-  key: readFileSync("client-key.pem"),
-  cert: readFileSync("client-cert.pem"),
-}, app)
+const server = http.createServer(app)
 
 const io = new Server(server, { transports: ["polling"], cors: { origin: "*" } })
 
