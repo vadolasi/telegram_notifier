@@ -100,6 +100,10 @@ export default function (): JSX.Element {
           <Select placeholder="Selecione o chat..." options={chats?.map((chat: any) => ({ value: chat.id, label: <div className="flex items-center gap-4"><img className="rounded-full w-10 h-10" src={` data:image/jpeg;charset=utf-8;base64,${chat.image}`} /><span>{chat.name}</span></div> }))} onChange={(e: any) => setChat(e.value)} />
           {chat && (
             <>
+              <div>
+                <label htmlFor="message">Message</label>
+                <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker || message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setMessagesSelected(e.map((m: any) => m.value))} />
+              </div>
               <fieldset>
                 <label htmlFor="continuos">
                   <input type="radio" id="continuos" onChange={() => {setContinuos(true);setIncludesText(false);setMatchMessage(false)}} checked={continuos} value="1" />
@@ -111,20 +115,14 @@ export default function (): JSX.Element {
                 </label>
                 <label htmlFor="igual">
                   <input type="radio" id="igual" onChange={() => {setContinuos(false);setIncludesText(false);setMatchMessage(true)}} checked={matchMessage} value="3" />
-                  É igual a mensagem
+                  Blacklist de mensagens
                 </label>
               </fieldset>
               {matchMessage && (
-                <>
-                  <div>
-                    <label htmlFor="message">Message</label>
-                    <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker || message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setMessagesSelected(e.map((m: any) => m.value))} />
-                  </div>
-                  <div>
-                    <label htmlFor="balcklistMessage">Balcklist Message</label>
-                    <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown>{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
-                  </div>
-                </>
+                <div>
+                  <label htmlFor="balcklistMessage">Balcklist Message</label>
+                  <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown>{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
+                </div>
               )}
               {includesText && (
                 <div>
