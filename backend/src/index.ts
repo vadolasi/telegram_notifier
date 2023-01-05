@@ -233,32 +233,6 @@ app.post("/notifiers", jwtMiddleware, async (req, res) => {
     }
   })
 
-  connections[user.phoneNumber].addEventHandler(async ev => {
-    let message: Message
-
-    if (ev.message.text) {
-      message = { type: "text", text: ev.message.text }
-    } else if (ev.message.sticker) {
-      message = { type: "sticker", sticker: Number(ev.message.sticker?.id) }
-    } else if (ev.message.media) {
-      message = { type: "media", media: ev.message.media.getBytes().toString("base64") }
-    } else {
-      return
-    }
-
-    if (rule.countMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
-      const count = await redis.incr(`notifier:${notifier.id}`)
-
-      if (count >= rule.count) {
-        await bot.sendMessage(Number(user.id), notifier.message)
-
-        await redis.del(`notifier:${notifier.id}`)
-      }
-    } else if (rule.resetMessages.find(m => JSON.stringify(m) === JSON.stringify(message))) {
-      await redis.del(`notifier:${notifier.id}`)
-    }
-  }, new NewMessage({ chats: [Number(notifier.chatId)] }))
-
   return res.send(JSON.stringify(notifier, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
