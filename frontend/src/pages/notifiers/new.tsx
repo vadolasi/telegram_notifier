@@ -105,18 +105,18 @@ export default function (): JSX.Element {
                 <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker || message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setMessagesSelected(e.map((m: any) => m.value))} />
               </div>
               <fieldset>
-                <div>
-                  <input type="radio" id="continuos" onChange={() => setContinuos(!continuos)} selected={continuos} />
-                  <label htmlFor="continuos">Apenas mensagens em seguida</label>
-                </div>
-                <div>
-                  <input type="radio" id="matchText" onChange={() => setIncludesText(!includesText)} selected={includesText} />
-                  <label htmlFor="matchText">Contém texto</label>
-                </div>
-                <div>
-                  <input type="radio" id="igual" onChange={() => setMatchMessage(!matchMessage)} selected={matchMessage} />
-                  <label htmlFor="igual">Não contém texto</label>
-                </div>
+                <label htmlFor="continuos">
+                  <input type="radio" id="continuos" onChange={() => {setContinuos(true);setIncludesText(false);setMatchMessage(false)}} checked={continuos} value="1" />
+                  Apenas mensagens em seguida
+                </label>
+                <label htmlFor="matchText">
+                  <input type="radio" id="matchText" onChange={() =>{setContinuos(false);setIncludesText(true);setMatchMessage(false)}} checked={includesText} value="2" />
+                  Contém texto
+                </label>
+                <label htmlFor="igual">
+                  <input type="radio" id="igual" onChange={() => {setContinuos(false);setIncludesText(false);setMatchMessage(true)}} checked={matchMessage} value="3" />
+                  Não contém texto
+                </label>
               </fieldset>
               {matchMessage && (
                 <div>
