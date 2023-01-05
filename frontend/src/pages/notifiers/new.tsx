@@ -21,6 +21,7 @@ export default function (): JSX.Element {
   const [continuos, setContinuos] = useState(false)
   const [includesText, setIncludesText] = useState(false)
   const [matchMessage, setMatchMessage] = useState(false)
+  const ´[blacklistMessage, setBlacklistMessage] = useState(false)
 
   const onSubmit = async (ev: any) => {
     ev.preventDefault()
@@ -100,34 +101,38 @@ export default function (): JSX.Element {
           <Select placeholder="Selecione o chat..." options={chats?.map((chat: any) => ({ value: chat.id, label: <div className="flex items-center gap-4"><img className="rounded-full w-10 h-10" src={` data:image/jpeg;charset=utf-8;base64,${chat.image}`} /><span>{chat.name}</span></div> }))} onChange={(e: any) => setChat(e.value)} />
           {chat && (
             <>
-              <div>
-                <label htmlFor="message">Message</label>
-                <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker || message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setMessagesSelected(e.map((m: any) => m.value))} />
-              </div>
+              <h2>Gatilhos</h2>
               <fieldset>
                 <label htmlFor="continuos">
-                  <input type="radio" id="continuos" onChange={() => {setContinuos(true);setIncludesText(false);setMatchMessage(false)}} checked={continuos} value="1" />
-                  Apenas mensagens em seguida
-                </label>
-                <label htmlFor="matchText">
-                  <input type="radio" id="matchText" onChange={() =>{setContinuos(false);setIncludesText(true);setMatchMessage(false)}} checked={includesText} value="2" />
+                  <input type="radio" id="continuos" onChange={() => {setIncludesText(true);setMatchMessage(false)}} checked={continuos} value="1" />
                   Contém texto
                 </label>
-                <label htmlFor="igual">
-                  <input type="radio" id="igual" onChange={() => {setContinuos(false);setIncludesText(false);setMatchMessage(true)}} checked={matchMessage} value="3" />
-                  Blacklist de mensagens
+                <label htmlFor="matchText">
+                  <input type="radio" id="matchText" onChange={() =>{setIncludesText(false);setMatchMessage(true)}} checked={includesText} value="2" />
+                  Igual à mensagem
                 </label>
               </fieldset>
               {matchMessage && (
                 <div>
-                  <label htmlFor="balcklistMessage">Balcklist Message</label>
-                  <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown>{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
+                  <label htmlFor="message">Message</label>
+                  <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker || message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setMessagesSelected(e.map((m: any) => m.value))} />
                 </div>
               )}
-              {includesText && (
+              <h2>Reset</h2>
+              <fieldset>
+                <label htmlFor="continuos">
+                  <input type="radio" id="continuos" onChange={() => {setContinuos(true);setBlacklistMessage(false)}} checked={continuos} value="1" />
+                  Apenas mensagens em seguida
+                </label>
+                <label htmlFor="igual">
+                  <input type="radio" id="igual" onChange={() => {setContinuos(false);setBlacklistMessage(true)}} checked={includesText} value="2" />
+                  Blacklist de mensagens
+                </label>
+              </fieldset>
+              {blacklistMessage && (
                 <div>
-                  <label htmlFor="text">Text</label>
-                  <input type="text" id="text" onChange={(e) => setIncludesText((e.target as any).value)} />
+                  <label htmlFor="balcklistMessage">Balcklist Message</label>
+                  <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown>{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
                 </div>
               )}
             </>
