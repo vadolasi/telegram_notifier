@@ -115,7 +115,7 @@ export default function (): JSX.Element {
                 </label>
                 <label htmlFor="igual">
                   <input type="radio" id="igual" onChange={() => {setContinuos(false);setIncludesText(false);setMatchMessage(true)}} checked={matchMessage} value="3" />
-                  Não contém texto
+                  É igual a mensagem
                 </label>
               </fieldset>
               {matchMessage && (
