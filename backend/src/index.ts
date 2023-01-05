@@ -30,7 +30,7 @@ const server = https.createServer({
   cert: readFileSync("client-cert.pem"),
 }, app)
 
-const io = new Server(server, { transports: ["websocket", "polling"], cors: { origin: "*" } })
+const io = new Server(server, { transports: ["polling"], cors: { origin: "*" } })
 
 const JWT_SECRET = process.env.JWT_SECRET!
 
