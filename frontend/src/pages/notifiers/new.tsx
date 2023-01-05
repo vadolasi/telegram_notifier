@@ -21,7 +21,6 @@ export default function (): JSX.Element {
   const [continuos, setContinuos] = useState(false)
   const [includesText, setIncludesText] = useState(false)
   const [matchMessage, setMatchMessage] = useState(false)
-  const [textIncludes, setTextIncludes] = useState("")
 
   const onSubmit = async (ev: any) => {
     ev.preventDefault()
@@ -107,15 +106,15 @@ export default function (): JSX.Element {
               </div>
               <fieldset>
                 <div>
-                  <input type="radio" id="continuos" onChange={() => setContinuos(!continuos)} />
+                  <input type="radio" id="continuos" onChange={() => setContinuos(!continuos)} selected={continuos} />
                   <label htmlFor="continuos">Apenas mensagens em seguida</label>
                 </div>
                 <div>
-                  <input type="radio" id="matchText" onChange={() => setIncludesText(!includesText)} />
+                  <input type="radio" id="matchText" onChange={() => setIncludesText(!includesText)} selected={includesText} />
                   <label htmlFor="matchText">Contém texto</label>
                 </div>
                 <div>
-                  <input type="radio" id="igual" onChange={() => setMatchMessage(!matchMessage)} />
+                  <input type="radio" id="igual" onChange={() => setMatchMessage(!matchMessage)} selected={matchMessage} />
                   <label htmlFor="igual">Não contém texto</label>
                 </div>
               </fieldset>
@@ -128,7 +127,7 @@ export default function (): JSX.Element {
               {includesText && (
                 <div>
                   <label htmlFor="text">Text</label>
-                  <input type="text" id="text" onChange={(e) => setTextIncludes((e.target as any).value)} />
+                  <input type="text" id="text" onChange={(e) => setIncludesText((e.target as any).value)} />
                 </div>
               )}
             </>
