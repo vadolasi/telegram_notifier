@@ -21,7 +21,7 @@ export default function (): JSX.Element {
   const [continuos, setContinuos] = useState(false)
   const [includesText, setIncludesText] = useState(false)
   const [matchMessage, setMatchMessage] = useState(false)
-  const ´[blacklistMessage, setBlacklistMessage] = useState(false)
+  const [blacklistMessage, setBlacklistMessage] = useState(false)
 
   const onSubmit = async (ev: any) => {
     ev.preventDefault()
