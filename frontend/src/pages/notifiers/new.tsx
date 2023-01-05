@@ -30,7 +30,7 @@ export default function (): JSX.Element {
     const data = { name, chatId: chat, message, rule: {
       count: quantity,
       continuos: continuos ? true : undefined,
-      includesText: includesText ? includesText : undefined,
+      includesText: includesText ? textToMatch : undefined,
       countMessages: messagesSelected.map((message: any) => {
         const m = messages?.find((m: any) => m.id === message)
 
