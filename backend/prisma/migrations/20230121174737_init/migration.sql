@@ -15,6 +15,7 @@ CREATE TABLE "Notifier" (
     "rule" STRING NOT NULL,
     "message" STRING NOT NULL,
     "userId" INT8 NOT NULL,
+    "forwardTo" INT8 NOT NULL,
 
     CONSTRAINT "Notifier_pkey" PRIMARY KEY ("id")
 );

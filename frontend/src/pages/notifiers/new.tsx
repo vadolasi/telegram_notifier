@@ -23,11 +23,14 @@ export default function (): JSX.Element {
   const [matchMessage, setMatchMessage] = useState(false)
   const [blacklistMessage, setBlacklistMessage] = useState(false)
   const [textToMatch, setTextToMatch] = useState("")
+  const [customMessage, setCustomMessage] = useState(true)
+  const [useBot, setUseBot] = useState(true)
+  const [chatToReply, setChatToReply] = useState(null)
 
   const onSubmit = async (ev: any) => {
     ev.preventDefault()
 
-    const data = { name, chatId: chat, message, rule: {
+    const data = { forwardTo: useBot ? undefined : chatToReply, name, chatId: chat, message: customMessage ? message : "__forward__", rule: {
       count: quantity,
       continuos: continuos ? true : undefined,
       includesText: includesText ? textToMatch : undefined,
@@ -146,16 +149,44 @@ export default function (): JSX.Element {
           )}
         </div>
         <div className="flex items-center gap-4">
-          <label htmlFor="quantity">Quantity</label>
+          <label htmlFor="quantity">Quantidade</label>
           <input type="number" id="quantity" min={1} onChange={(e) => setQuantity(parseInt((e.target as any).value))} />
         </div>
-        <div className="flex items-center gap-4">
-          <label htmlFor="message">Message</label>
-          <input type="text" id="message" onChange={(e) => setMessage((e.target as any).value)} />
-        </div>
+        <fieldset>
+          <label htmlFor="exact">
+            <input type="radio" id="exact" onChange={() => setCustomMessage(true)} checked={customMessage} value="2" />
+            Texto personalizado
+          </label>
+          <label htmlFor="include">
+            <input type="radio" id="include" onChange={() => setCustomMessage(false)} checked={!customMessage} value="1" />
+            Repassar mensagem
+          </label>
+        </fieldset>
+        {customMessage && (
+          <div className="flex items-center gap-4">
+            <label htmlFor="message">Message</label>
+            <input type="text" id="message" onChange={(e) => setMessage((e.target as any).value)} />
+          </div>
+        )}
+        <fieldset>
+          <label htmlFor="exact">
+            <input type="radio" id="exact" onChange={() => setUseBot(true)} checked={useBot} value="2" />
+            Enviar pelo bot
+          </label>
+          <label htmlFor="include">
+            <input type="radio" id="include" onChange={() => setUseBot(false)} checked={!useBot} value="1" />
+            Enviar para o chat
+          </label>
+        </fieldset>
+        {!useBot && (
+          <div className="flex items-center gap-4">
+            <label htmlFor="message">Chat</label>
+            <Select placeholder="Selecione o chat..." options={chats?.map((chat: any) => ({ value: chat.id, label: <div className="flex items-center gap-4"><img className="rounded-full w-10 h-10" src={` data:image/jpeg;charset=utf-8;base64,${chat.image}`} /><span>{chat.name}</span></div> }))} onChange={(e: any) => setChatToReply(e.value)} />
+          </div>
+        )}
         <div>
-          <button type="submit">Create</button>
-          <a href="/">Cancel</a>
+          <button type="submit">Criar</button>
+          <a href="/">Cancelar</a>
         </div>
       </form>
     </div>

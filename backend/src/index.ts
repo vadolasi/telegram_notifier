@@ -219,7 +219,7 @@ app.post("/notifiers", jwtMiddleware, async (req, res) => {
   // @ts-ignore
   const user = req.user
 
-  const { rule, message, chatId, name } = req.body
+  const { rule, message, chatId, name, forwardTo } = req.body
 
   const notifier = await prisma.notifier.create({
     data: {
@@ -229,7 +229,8 @@ app.post("/notifiers", jwtMiddleware, async (req, res) => {
       userId: user.id,
       // parse bigint to number
       rule: JSON.stringify(rule, (_key, value) => typeof value === "bigint" ? Number(value) : value),
-      message
+      message,
+      forwardTo: forwardTo || null
     }
   })
 
@@ -385,7 +386,20 @@ type Message = TextMessage | StickerMessage | MediaMessage
           const count = await redis.incr(`notifier:${notifier.id}`)
 
           if (count >= rule.count) {
-            await bot.sendMessage(Number(user.id), notifier.message)
+            if (notifier.message === "__foward__") {
+              await connections[user.phoneNumber].sendMessage(Number(notifier.chatId), {
+                message: ev.message.text,
+                file: ev.message.media
+              })
+            } else {
+              if (notifier.forwardTo) {
+                await connections[user.phoneNumber].sendMessage(Number(notifier.forwardTo), {
+                  message: notifier.message
+                })
+              } else {
+                await bot.sendMessage(Number(user.id), notifier.message)
+              }
+            }
 
             await redis.del(`notifier:${notifier.id}`)
           }
