@@ -22,7 +22,7 @@ export default function (): JSX.Element {
           ))}
         </ul>
       )}
-      <a href="/notifiers/new">New Notifier</a>
+      <a href="/notifiers/new">Novo notificador</a>
       <h1>Repassadores</h1>
       {errorForwarders && <div>Failed to load</div>}
       {!forwarders && !errorForwarders && <div>Loading...</div>}
@@ -36,6 +36,7 @@ export default function (): JSX.Element {
           ))}
         </ul>
       )}
+      <a href="/forwarders/new">Novo repassador</a>
     </div>
   )
 }
