@@ -23,10 +23,37 @@ export default function (): JSX.Element {
   const onSubmit = async (ev: any) => {
     ev.preventDefault()
 
-    const data = {}
+    const data = {
+      name,
+      fromChat,
+      toChat,
+      message,
+      rule: {
+        messages: messagesSelected.map((message: any) => {
+          const m = messages?.find((m: any) => m.id === message)
+
+          if (m.text) {
+            return {
+              type: "text",
+              text: m.text
+            }
+          } else if (m.sticker) {
+            return {
+              type: "sticker",
+              sticker: m.sticker
+            }
+          } else {
+            return {
+              type: "media",
+              media: m.media
+            }
+          }
+        })
+      }
+    }
 
     try {
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/notifiers`, {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/fowarders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -62,6 +89,10 @@ export default function (): JSX.Element {
         <div>
           <label htmlFor="toChat">Chat de envio</label>
           <Select placeholder="Selecione o chat..." options={chats?.map((chat: any) => ({ value: chat.id, label: <div className="flex items-center gap-4"><img className="rounded-full w-10 h-10" src={` data:image/jpeg;charset=utf-8;base64,${chat.image}`} /><span>{chat.name}</span></div> }))} onChange={(e: any) => setToChat(e.value)} />
+        </div>
+        <div>
+          <button type="submit">Criar</button>
+          <a href="/">Cancelar</a>
         </div>
       </form>
     </div>

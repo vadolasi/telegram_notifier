@@ -306,6 +306,60 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
   return res.send(JSON.stringify(chat, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
+app.get("/forwarders", jwtMiddleware, async (req, res) => {
+  // @ts-ignore
+  const userId = req.user.id
+
+  const forwarders = await prisma.forwarder.findMany({ where: { userId } })
+
+  // parse bigint to number
+  return res.send(JSON.stringify(forwarders, (_key, value) => typeof value === "bigint" ? Number(value) : value))
+})
+
+app.post("/forwarders", jwtMiddleware, async (req, res) => {
+  // @ts-ignore
+  const user = req.user
+
+  const { fromChat, toChat, name, rule } = req.body
+
+  const forwarder = await prisma.forwarder.create({
+    data: {
+      fromChat: Number(fromChat),
+      toChat: Number(toChat),
+      name,
+      // @ts-ignore
+      userId: user.id,
+      rule: JSON.stringify(rule, (_key, value) => typeof value === "bigint" ? Number(value) : value)
+    }
+  })
+
+  return res.send(JSON.stringify(forwarder, (_key, value) => typeof value === "bigint" ? Number(value) : value))
+})
+
+app.delete("/forwarders/:id", jwtMiddleware, async (req, res) => {
+  const forwarder = await prisma.forwarder.deleteMany({
+    where: {
+      id: req.params.id,
+      // @ts-ignore
+      userId: req.user.id
+    }
+  })
+
+  return res.send(JSON.stringify(forwarder, (_key, value) => typeof value === "bigint" ? Number(value) : value))
+})
+
+app.get("/forwarders/:id", jwtMiddleware, async (req, res) => {
+  const forwarder = await prisma.forwarder.findFirst({
+    where: {
+      id: req.params.id,
+      // @ts-ignore
+      userId: req.user.id
+    }
+  })
+
+  return res.send(JSON.stringify(forwarder, (_key, value) => typeof value === "bigint" ? Number(value) : value))
+})
+
 process.on("exit", async () => {
   await prisma.$disconnect()
   await bot.logOut()
@@ -404,13 +458,13 @@ type Message = TextMessage | StickerMessage | MediaMessage
         })
 
         if (forwarder) {
-          const rule: { type: "text" | "sticker", text?: string, sticker: number } = JSON.parse(forwarder.rule)
+          const rule: { type: "text" | "sticker" | "media", text?: string, sticker: number } = JSON.parse(forwarder.rule)
 
           if (rule.type === "text" && ev.message.text?.includes(rule.text!)) {
             await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
               message: ev.message.text
             })
-          } else if (rule.type === "sticker" && Number(ev.message.sticker?.id) === rule.sticker) {
+          } else if ((rule.type === "sticker" || rule.type === "media") && Number(ev.message.sticker?.id) === rule.sticker) {
             await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
               file: await connections[user.phoneNumber].downloadMedia(ev.message)
             })
