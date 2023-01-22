@@ -53,7 +53,7 @@ export default function (): JSX.Element {
     }
 
     try {
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/fowarders`, {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/forwarders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
