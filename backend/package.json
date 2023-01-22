@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --exit-child --watch src src/index.ts",
     "start": "pm2 start src/index.ts",
-    "postinstall": "pm2 install typescript"
+    "postinstall": "prisma generate && pm2 install typescript"
   },
   "keywords": [],
   "author": "",
