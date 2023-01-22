@@ -229,8 +229,7 @@ app.post("/notifiers", jwtMiddleware, async (req, res) => {
       userId: user.id,
       // parse bigint to number
       rule: JSON.stringify(rule, (_key, value) => typeof value === "bigint" ? Number(value) : value),
-      message,
-      forwardTo: forwardTo || null
+      message
     }
   })
 
@@ -336,7 +335,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
 ;(async () => {
   await prisma.$connect()
 
-  const users = await prisma.user.findMany({ include: { notifiers: true } })
+  const users = await prisma.user.findMany({ include: { notifiers: true, forwarders: true } })
 
   try {
     await Promise.all(users.map(async user => {
@@ -366,47 +365,56 @@ type Message = TextMessage | StickerMessage | MediaMessage
           }
         })
 
-        if (!notifier) return
+        if (notifier) {
+          const rule: { countMessages: Message[], includesText?: string, resetMessages?: Message[], count: number, continuos?: boolean } = JSON.parse(notifier.rule)
 
-        const rule: { countMessages: Message[], includesText?: string, resetMessages?: Message[], count: number, continuos?: boolean } = JSON.parse(notifier.rule)
+          let message: Message
 
-        let message: Message
+          if (ev.message.text) {
+            message = { type: "text", text: ev.message.text }
+          } else if (ev.message.sticker) {
+            message = { type: "sticker", sticker: Number(ev.message.sticker?.id) }
+          } else if (ev.message.media) {
+            message = { type: "media", media: ev.message.media.getBytes().toString("base64") }
+          } else {
+            return
+          }
 
-        if (ev.message.text) {
-          message = { type: "text", text: ev.message.text }
-        } else if (ev.message.sticker) {
-          message = { type: "sticker", sticker: Number(ev.message.sticker?.id) }
-        } else if (ev.message.media) {
-          message = { type: "media", media: ev.message.media.getBytes().toString("base64") }
-        } else {
-          return
-        }
+          if ((rule.includesText && ev.message.text?.includes(rule.includesText)) || (rule.countMessages.find(m => JSON.stringify(m) === JSON.stringify(message)))) {
+            const count = await redis.incr(`notifier:${notifier.id}`)
 
-        if ((rule.includesText && ev.message.text?.includes(rule.includesText)) || (rule.countMessages.find(m => JSON.stringify(m) === JSON.stringify(message)))) {
-          const count = await redis.incr(`notifier:${notifier.id}`)
+            if (count >= rule.count) {
+              await bot.sendMessage(Number(user.id), notifier.message)
 
-          if (count >= rule.count) {
-            if (notifier.message === "__foward__") {
-              await connections[user.phoneNumber].sendMessage(Number(notifier.chatId), {
-                message: ev.message.text,
-                file: ev.message.media
-              })
-            } else {
-              if (notifier.forwardTo) {
-                await connections[user.phoneNumber].sendMessage(Number(notifier.forwardTo), {
-                  message: notifier.message
-                })
-              } else {
-                await bot.sendMessage(Number(user.id), notifier.message)
-              }
+              await redis.del(`notifier:${notifier.id}`)
             }
-
+          } else if (rule.continuos) {
+            await redis.del(`notifier:${notifier.id}`)
+          } else if (rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message))) {
             await redis.del(`notifier:${notifier.id}`)
           }
-        } else if (rule.continuos) {
-          await redis.del(`notifier:${notifier.id}`)
-        } else if (rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message))) {
-          await redis.del(`notifier:${notifier.id}`)
+        }
+
+        const forwarder = await prisma.forwarder.findFirst({
+          where: {
+            fromChat: Number(ev.message.chatId),
+            // @ts-ignore
+            userId: user.id
+          }
+        })
+
+        if (forwarder) {
+          const rule: { type: "text" | "sticker", text?: string, sticker: number } = JSON.parse(forwarder.rule)
+
+          if (rule.type === "text" && ev.message.text?.includes(rule.text!)) {
+            await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
+              message: ev.message.text
+            })
+          } else if (rule.type === "sticker" && Number(ev.message.sticker?.id) === rule.sticker) {
+            await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
+              file: await connections[user.phoneNumber].downloadMedia(ev.message)
+            })
+          }
         }
       }, new NewMessage())
     }))

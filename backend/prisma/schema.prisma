@@ -12,6 +12,7 @@ model User {
   phoneNumber String @unique
   session     String
   notifiers   Notifier[]
+  forwarders  Forwarder[]
 }
 
 model Notifier {
@@ -22,5 +23,14 @@ model Notifier {
   message   String
   user      User   @relation(fields: [userId], references: [id])
   userId    BigInt
-  forwardTo BigInt?
+}
+
+model Forwarder {
+  id        String @id @default(uuid())
+  name      String
+  fromChat  BigInt
+  toChat    BigInt
+  rule      String
+  user      User   @relation(fields: [userId], references: [id])
+  userId    BigInt
 }

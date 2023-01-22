@@ -15,9 +15,20 @@ CREATE TABLE "Notifier" (
     "rule" STRING NOT NULL,
     "message" STRING NOT NULL,
     "userId" INT8 NOT NULL,
-    "forwardTo" INT8 NOT NULL,
 
     CONSTRAINT "Notifier_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Forwarder" (
+    "id" STRING NOT NULL,
+    "name" STRING NOT NULL,
+    "fromChat" INT8 NOT NULL,
+    "toChat" INT8 NOT NULL,
+    "rule" STRING NOT NULL,
+    "userId" INT8 NOT NULL,
+
+    CONSTRAINT "Forwarder_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -25,3 +36,6 @@ CREATE UNIQUE INDEX "User_phoneNumber_key" ON "User"("phoneNumber");
 
 -- AddForeignKey
 ALTER TABLE "Notifier" ADD CONSTRAINT "Notifier_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Forwarder" ADD CONSTRAINT "Forwarder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
