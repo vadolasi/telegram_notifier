@@ -458,17 +458,20 @@ type Message = TextMessage | StickerMessage | MediaMessage
         })
 
         if (forwarder) {
-          const rule: { type: "text" | "sticker" | "media", text?: string, sticker: number } = JSON.parse(forwarder.rule)
+          const rule: { messages: { type: "text" | "sticker" | "media", text?: string, sticker: number }[] } = JSON.parse(forwarder.rule)
 
-          if (rule.type === "text" && ev.message.text?.includes(rule.text!)) {
-            await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
-              message: ev.message.text
-            })
-          } else if ((rule.type === "sticker" || rule.type === "media") && Number(ev.message.sticker?.id) === rule.sticker) {
-            await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
-              file: await connections[user.phoneNumber].downloadMedia(ev.message)
-            })
-          }
+
+          rule.messages.forEach(async rule => {
+            if (rule.type === "text" && ev.message.text?.includes(rule.text!)) {
+              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
+                message: ev.message.text
+              })
+            } else if ((rule.type === "sticker" || rule.type === "media") && Number(ev.message.sticker?.id) === rule.sticker) {
+              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
+                file: await connections[user.phoneNumber].downloadMedia(ev.message)
+              })
+            }
+          })
         }
       }, new NewMessage())
     }))
