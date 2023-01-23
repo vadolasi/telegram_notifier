@@ -467,8 +467,9 @@ type Message = TextMessage | StickerMessage | MediaMessage
                 message: ev.message.text
               })
             } else if ((rule.type === "sticker" || rule.type === "media") && Number(ev.message.sticker?.id) === rule.sticker) {
-              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
-                file: await connections[user.phoneNumber].downloadMedia(ev.message)
+              await connections[user.phoneNumber].forwardMessages(Number(forwarder.toChat), {
+                fromPeer: Number(forwarder.fromChat),
+                messages: [ev.message.id]
               })
             }
           })

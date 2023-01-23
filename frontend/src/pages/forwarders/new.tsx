@@ -12,7 +12,6 @@ export default function (): JSX.Element {
   const [name, setName] = useState("")
   const [fromChat, setFromChat] = useState<number | null>(null)
   const [toChat, setToChat] = useState<number | null>(null)
-  const [message, setMessage] = useState("")
   const [messagesSelected, setMessagesSelected] = useState([])
 
   const { data: chats, error: chatsError } = useSWR("/chats", fetcher)
@@ -27,7 +26,6 @@ export default function (): JSX.Element {
       name,
       fromChat,
       toChat,
-      message,
       rule: {
         messages: messagesSelected.map((message: any) => {
           const m = messages?.find((m: any) => m.id === message)
