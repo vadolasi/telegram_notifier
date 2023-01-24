@@ -410,7 +410,21 @@ type Message = TextMessage | StickerMessage | MediaMessage
         onError: e => console.log(e)
       })
 
-      connections[user.phoneNumber].addEventHandler(async ev => {
+      interface Ev {
+        message: {
+          id: number
+          chatId: BigInt
+          text?: string
+          sticker?: {
+            id: BigInt
+          }
+          media?: {
+            getBytes: () => Buffer
+          }
+        }
+      }
+
+      const handler = async (ev: Ev) => {
         const notifier = await prisma.notifier.findFirst({
           where: {
             chatId: Number(ev.message.chatId),
@@ -466,14 +480,29 @@ type Message = TextMessage | StickerMessage | MediaMessage
                 message: ev.message.text
               })
             } else if ((rule.type === "sticker" || rule.type === "media") && Number(ev.message.sticker?.id) === rule.sticker) {
-              await connections[user.phoneNumber].forwardMessages(Number(forwarder.toChat), {
+              const messages = await connections[user.phoneNumber].forwardMessages(Number(forwarder.toChat), {
                 fromPeer: Number(forwarder.fromChat),
                 messages: [ev.message.id]
+              })
+              await handler({
+                message: {
+                  id: messages[0].id,
+                  chatId: BigInt(forwarder.toChat),
+                  media: ev.message.media ? {
+                    getBytes: () => ev.message.media!.getBytes()
+                  } : undefined,
+                  sticker: ev.message.sticker ? {
+                    id: ev.message.sticker.id
+                  } : undefined,
+                  text: ev.message.text
+                }
               })
             }
           })
         }
-      }, new NewMessage())
+      }
+
+      connections[user.phoneNumber].addEventHandler(handler, new NewMessage({}))
     }))
   } catch (e) {
     console.log(e)
