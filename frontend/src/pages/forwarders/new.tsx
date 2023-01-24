@@ -13,6 +13,8 @@ export default function (): JSX.Element {
   const [fromChat, setFromChat] = useState<number | null>(null)
   const [toChat, setToChat] = useState<number | null>(null)
   const [messagesSelected, setMessagesSelected] = useState([])
+  const [includesText, setIncludesText] = useState(false)
+  const [textToMatch, setTextToMatch] = useState("")
 
   const { data: chats, error: chatsError } = useSWR("/chats", fetcher)
   const { data: messages, error: messagesError } = useSWR(fromChat ? `/chats/${fromChat}` : undefined, fetcher)
@@ -33,6 +35,7 @@ export default function (): JSX.Element {
           if (m.text) {
             return {
               type: "text",
+              contains: includesText ? textToMatch : undefined,
               text: m.text
             }
           } else if (m.sticker) {
@@ -78,7 +81,23 @@ export default function (): JSX.Element {
           <label htmlFor="fromChat">Chat de recebimento</label>
           <Select placeholder="Selecione o chat..." options={chats?.map((chat: any) => ({ value: chat.id, label: <div className="flex items-center gap-4"><img className="rounded-full w-10 h-10" src={` data:image/jpeg;charset=utf-8;base64,${chat.image}`} /><span>{chat.name}</span></div> }))} onChange={(e: any) => setFromChat(e.value)} />
         </div>
-        {fromChat && (
+        <fieldset>
+          <label htmlFor="include">
+            <input type="radio" id="include" onChange={() => {setIncludesText(true)}} checked={includesText} value="1" />
+            Contém texto
+          </label>
+          <label htmlFor="exact">
+            <input type="radio" id="exact" onChange={() =>{setIncludesText(false)}} checked={!includesText} value="2" />
+            Igual à mensagem
+          </label>
+        </fieldset>
+        {fromChat && includesText && (
+          <div>
+            <label htmlFor="textToMatch">Text to match</label>
+            <input type="text" id="textToMatch" onChange={(e) => setTextToMatch((e.target as any).value)} />
+          </div>
+        )}
+        {fromChat && !includesText && (
           <div>
             <label htmlFor="messages">Mensagens</label>
             <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker || message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setMessagesSelected(e.map((m: any) => m.value))} />

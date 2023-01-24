@@ -458,10 +458,10 @@ type Message = TextMessage | StickerMessage | MediaMessage
         })
 
         if (forwarder) {
-          const rule: { messages: { type: "text" | "sticker" | "media", text?: string, sticker: number }[] } = JSON.parse(forwarder.rule)
+          const rule: { messages: { type: "text" | "sticker" | "media", contains?: boolean, text?: string, sticker: number }[] } = JSON.parse(forwarder.rule)
 
           rule.messages.forEach(async rule => {
-            if (rule.type === "text" && ev.message.text?.includes(rule.text!)) {
+            if (rule.type === "text" && (rule.contains ? ev.message.text?.includes(rule.text!) : ev.message.text === rule.text)) {
               await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
                 message: ev.message.text
               })
