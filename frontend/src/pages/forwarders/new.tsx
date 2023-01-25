@@ -14,7 +14,7 @@ export default function (): JSX.Element {
   const [toChat, setToChat] = useState<number | null>(null)
   const [messagesSelected, setMessagesSelected] = useState([])
   const [includesText, setIncludesText] = useState(false)
-  const [textToMatch, setTextToMatch] = useState("")
+  const [textsToMatch, setTextsToMatch] = useState<string[]>([])
 
   const { data: chats, error: chatsError } = useSWR("/chats", fetcher)
   const { data: messages, error: messagesError } = useSWR(fromChat ? `/chats/${fromChat}` : undefined, fetcher)
@@ -29,13 +29,13 @@ export default function (): JSX.Element {
       fromChat,
       toChat,
       rule: {
-        messages: includesText ? [
-          {
+        messages: includesText ? textsToMatch.map(textToMatch => {
+          return {
             type: "text",
             contains: true,
             text: textToMatch
           }
-        ] : messagesSelected.map((message: any) => {
+        }) : messagesSelected.map((message: any) => {
           const m = messages?.find((m: any) => m.id === message)
 
           if (m.text) {
@@ -98,8 +98,15 @@ export default function (): JSX.Element {
         </fieldset>
         {fromChat && includesText && (
           <div>
-            <label htmlFor="textToMatch">Text to match</label>
-            <input type="text" id="textToMatch" onChange={(e) => setTextToMatch((e.target as any).value)} />
+            <label htmlFor="textToMatch">Textos</label>
+            {textsToMatch.map((textToMatch: string, index: number) => (
+              <input type="text" value={textToMatch} onChange={(e) => {
+                const newTextsToMatch = [...textsToMatch]
+                newTextsToMatch[index] = (e.target as any).value
+                setTextsToMatch(newTextsToMatch)
+              }} />
+            ))}
+            <button type="button" onClick={() => setTextsToMatch([...textsToMatch, ""])}>Adicionar</button>
           </div>
         )}
         {fromChat && !includesText && (
