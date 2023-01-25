@@ -29,13 +29,18 @@ export default function (): JSX.Element {
       fromChat,
       toChat,
       rule: {
-        messages: messagesSelected.map((message: any) => {
+        messages: includesText ? [
+          {
+            type: "text",
+            contains: true,
+            text: textToMatch
+          }
+        ] : messagesSelected.map((message: any) => {
           const m = messages?.find((m: any) => m.id === message)
 
           if (m.text) {
             return {
               type: "text",
-              contains: includesText ? textToMatch : undefined,
               text: m.text
             }
           } else if (m.sticker) {
