@@ -476,17 +476,34 @@ type Message = TextMessage | StickerMessage | MediaMessage
 
           rule.messages.forEach(async rule => {
             if (rule.type === "text" && (rule.contains ? ev.message.text?.includes(rule.text!) : ev.message.text === rule.text)) {
-              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
+              const message = await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
                 message: ev.message.text
-              })
-            } else if ((rule.type === "sticker" || rule.type === "media") && Number(ev.message.sticker?.id) === rule.sticker) {
-              const messages = await connections[user.phoneNumber].forwardMessages(Number(forwarder.toChat), {
-                fromPeer: Number(forwarder.fromChat),
-                messages: [ev.message.id]
               })
               await handler({
                 message: {
-                  id: messages[0].id,
+                  id: message.id,
+                  chatId: BigInt(forwarder.toChat),
+                  media: ev.message.media ? {
+                    getBytes: () => ev.message.media!.getBytes()
+                  } : undefined,
+                  sticker: ev.message.sticker ? {
+                    id: ev.message.sticker.id
+                  } : undefined,
+                  text: ev.message.text
+                }
+              })
+            } else if ((rule.type === "sticker" || rule.type === "media") && Number(ev.message.sticker?.id) === rule.sticker) {
+              let message: any
+
+              if (rule.type === "sticker") {
+                message = await bot.sendSticker(Number(forwarder.toChat), ev.message.media?.getBytes()!)
+              } else if (rule.type === "media") {
+                message = await bot.sendPhoto(Number(forwarder.toChat), ev.message.media?.getBytes()!)
+              }
+
+              await handler({
+                message: {
+                  id: message?.message_id,
                   chatId: BigInt(forwarder.toChat),
                   media: ev.message.media ? {
                     getBytes: () => ev.message.media!.getBytes()
