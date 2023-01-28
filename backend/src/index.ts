@@ -493,17 +493,13 @@ type Message = TextMessage | StickerMessage | MediaMessage
                 }
               })
             } else if ((rule.type === "sticker" || rule.type === "media") && Number(ev.message.sticker?.id) === rule.sticker) {
-              let message: any
-
-              if (rule.type === "sticker") {
-                message = await bot.sendSticker(Number(forwarder.toChat), ev.message.media?.getBytes()!)
-              } else if (rule.type === "media") {
-                message = await bot.sendPhoto(Number(forwarder.toChat), ev.message.media?.getBytes()!)
-              }
+              const message = await connections[user.phoneNumber].sendFile(Number(forwarder.toChat), {
+                file: ev.message.media?.getBytes()!
+              })
 
               await handler({
                 message: {
-                  id: message?.message_id,
+                  id: message?.id,
                   chatId: BigInt(forwarder.toChat),
                   media: ev.message.media ? {
                     getBytes: () => ev.message.media!.getBytes()
