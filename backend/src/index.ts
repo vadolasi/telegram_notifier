@@ -492,23 +492,29 @@ type Message = TextMessage | StickerMessage | MediaMessage
                   text: ev.message.text
                 }
               })
-            } else if ((rule.type === "sticker" || rule.type === "media") && Number(ev.message.sticker?.id) === rule.sticker) {
-              const message = await connections[user.phoneNumber].sendFile(Number(forwarder.toChat), {
-                file: ev.message.media?.getBytes()!
+            } else if ((rule.type === "sticker") && Number(ev.message.sticker?.id) === rule.sticker) {
+              const sticker = ev.message.media?.getBytes()!
+
+              const formData = new FormData()
+              formData.append("file", new Blob([sticker]), "sticker.tgs")
+
+              const result = await fetch("https://proxy-five-wine.vercel.app/?url=http://152.70.215.19", {
+                method: "POST",
+                body: formData
               })
 
-              await handler({
-                message: {
-                  id: message?.id,
-                  chatId: BigInt(forwarder.toChat),
-                  media: ev.message.media ? {
-                    getBytes: () => ev.message.media!.getBytes()
-                  } : undefined,
-                  sticker: ev.message.sticker ? {
-                    id: ev.message.sticker.id
-                  } : undefined,
-                  text: ev.message.text
-                }
+              const file = await result.arrayBuffer()
+
+              const buffer = Buffer.from(file)
+
+              await connections[user.phoneNumber].sendFile(Number(forwarder.toChat), {
+                file: buffer
+              })
+            } else if ((rule.type === "media") && ev.message.media) {
+              const media = ev.message.media.getBytes()!
+
+              await connections[user.phoneNumber].sendFile(Number(forwarder.toChat), {
+                file: media
               })
             }
           })
