@@ -498,14 +498,14 @@ type Message = TextMessage | StickerMessage | MediaMessage
               const formData = new FormData()
               formData.append("file", new Blob([sticker]), "sticker.tgs")
 
-              const result = await fetch("https://proxy-five-wine.vercel.app/?url=http://152.70.215.19", {
+              const result = await fetch("http://152.70.215.19", {
                 method: "POST",
                 body: formData
               })
 
               const hash = result.headers.get("X-File-Hash")
 
-              await bot.sendPhoto(Number(forwarder.toChat), `https://proxy-five-wine.vercel.app/?url=http://152.70.215.19/${hash}`)
+              await bot.sendPhoto(Number(forwarder.toChat), `http://152.70.215.19/${hash}`)
             } else if ((rule.type === "media") && ev.message.media) {
               const media = ev.message.media.getBytes()!
 
