@@ -503,17 +503,15 @@ type Message = TextMessage | StickerMessage | MediaMessage
                 body: formData
               })
 
-              const file = await result.arrayBuffer()
+              const hash = result.headers.get("X-File-Hash")
 
-              const buffer = Buffer.from(file)
-
-              await connections[user.phoneNumber].sendFile(Number(forwarder.toChat), {
-                file: buffer
+              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
+                file: `https://proxy-five-wine.vercel.app/?url=http://152.70.215.19/${hash}`
               })
             } else if ((rule.type === "media") && ev.message.media) {
               const media = ev.message.media.getBytes()!
 
-              await connections[user.phoneNumber].sendFile(Number(forwarder.toChat), {
+              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
                 file: media
               })
             }
