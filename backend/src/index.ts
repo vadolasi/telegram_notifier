@@ -505,9 +505,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
 
               const hash = result.headers.get("X-File-Hash")
 
-              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
-                file: `https://proxy-five-wine.vercel.app/?url=http://152.70.215.19/${hash}`
-              })
+              await bot.sendPhoto(Number(forwarder.toChat), `https://proxy-five-wine.vercel.app/?url=http://152.70.215.19/${hash}`)
             } else if ((rule.type === "media") && ev.message.media) {
               const media = ev.message.media.getBytes()!
 
