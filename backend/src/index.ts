@@ -503,9 +503,9 @@ type Message = TextMessage | StickerMessage | MediaMessage
                 body: formData
               })
 
-              const hash = result.headers.get("X-File-Hash")
+              const buffer = Buffer.from(await result.arrayBuffer())
 
-              await bot.sendPhoto(Number(forwarder.toChat), `http://152.70.215.19/${hash}`)
+              await bot.sendPhoto(Number(forwarder.toChat), buffer)
             } else if ((rule.type === "media") && ev.message.media) {
               const media = ev.message.media.getBytes()!
 
