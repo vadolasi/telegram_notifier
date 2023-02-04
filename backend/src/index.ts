@@ -468,15 +468,17 @@ type Message = TextMessage | StickerMessage | MediaMessage
               // @ts-ignore
               await handler({ ...ev, message })
             } else if ((rule.type === "sticker") && Number(ev.message.sticker?.id) === rule.sticker) {
-              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
+              const message = await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
                 file: ev.message.media!
               })
+              // @ts-ignore
+              await handler({ ...ev, message })
             } else if ((rule.type === "media") && ev.message.media) {
-              const media = ev.message.media.getBytes()!
-
-              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
-                file: media
+              const message = await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
+                file: ev.message.media!
               })
+              // @ts-ignore
+              await handler({ ...ev, message })
             }
           })
         }
