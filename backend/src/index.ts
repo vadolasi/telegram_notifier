@@ -1,4 +1,4 @@
-import { Api, TelegramClient } from "telegram"
+import { TelegramClient } from "telegram"
 import { StringSession } from "telegram/sessions"
 import { PrismaClient } from "@prisma/client"
 import Redis from "ioredis"
@@ -7,7 +7,7 @@ import { Server } from "socket.io"
 import jwt from "jsonwebtoken"
 import { randomUUID } from "crypto"
 import TelegramBot from "node-telegram-bot-api"
-import { NewMessage } from "telegram/events"
+import { NewMessage, NewMessageEvent } from "telegram/events"
 import express from "express"
 import cors from "cors"
 import http from "http"
@@ -410,21 +410,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
         onError: e => console.log(e)
       })
 
-      interface Ev {
-        message: {
-          id: number
-          chatId: BigInt
-          text?: string
-          sticker?: {
-            id: BigInt
-          }
-          media?: {
-            getBytes: () => Buffer
-          }
-        }
-      }
-
-      const handler = async (ev: Ev) => {
+      const handler = async (ev: NewMessageEvent) => {
         const notifier = await prisma.notifier.findFirst({
           where: {
             chatId: Number(ev.message.chatId),
@@ -479,28 +465,11 @@ type Message = TextMessage | StickerMessage | MediaMessage
               const message = await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
                 message: ev.message.text
               })
-              await handler({
-                message: {
-                  id: message.id,
-                  chatId: BigInt(forwarder.toChat),
-                  media: ev.message.media ? {
-                    getBytes: () => ev.message.media!.getBytes()
-                  } : undefined,
-                  sticker: ev.message.sticker ? {
-                    id: ev.message.sticker.id
-                  } : undefined,
-                  text: ev.message.text
-                }
-              })
+              // @ts-ignore
+              await handler({ ...ev, message })
             } else if ((rule.type === "sticker") && Number(ev.message.sticker?.id) === rule.sticker) {
-              const messages = await connections[user.phoneNumber].getMessages(Number(forwarder.fromChat), {
-                limit: 1,
-                offsetId: ev.message.id,
-                addOffset: 1
-              })
-
               await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
-                file: messages[0].media!
+                file: ev.message.media!
               })
             } else if ((rule.type === "media") && ev.message.media) {
               const media = ev.message.media.getBytes()!
