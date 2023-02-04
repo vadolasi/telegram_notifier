@@ -1,4 +1,4 @@
-import { TelegramClient } from "telegram"
+import { Api, TelegramClient } from "telegram"
 import { StringSession } from "telegram/sessions"
 import { PrismaClient } from "@prisma/client"
 import Redis from "ioredis"
@@ -493,19 +493,15 @@ type Message = TextMessage | StickerMessage | MediaMessage
                 }
               })
             } else if ((rule.type === "sticker") && Number(ev.message.sticker?.id) === rule.sticker) {
-              const sticker = ev.message.media?.getBytes()!
-
-              const formData = new FormData()
-              formData.append("file", new Blob([sticker]), "sticker.tgs")
-
-              const result = await fetch("http://152.70.215.19", {
-                method: "POST",
-                body: formData
+              const messages = await connections[user.phoneNumber].getMessages(Number(forwarder.fromChat), {
+                limit: 1,
+                offsetId: ev.message.id,
+                addOffset: 1
               })
 
-              const buffer = Buffer.from(await result.arrayBuffer())
+              const sticker = messages[0]!.sticker!
 
-              await bot.sendPhoto(Number(forwarder.toChat), buffer)
+              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), { file: sticker.fileReference })
             } else if ((rule.type === "media") && ev.message.media) {
               const media = ev.message.media.getBytes()!
 
