@@ -499,9 +499,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
                 addOffset: 1
               })
 
-              const sticker = messages[0]!.sticker!
-
-              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), { file: sticker.fileReference })
+              await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), { file: messages[0]!.sticker!.getBytes()! })
             } else if ((rule.type === "media") && ev.message.media) {
               const media = ev.message.media.getBytes()!
 
