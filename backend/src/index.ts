@@ -11,6 +11,7 @@ import { NewMessage, NewMessageEvent } from "telegram/events"
 import express from "express"
 import cors from "cors"
 import http from "http"
+import { message } from "telegram/client"
 
 config()
 
@@ -295,12 +296,26 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
   // @ts-ignore
   const client = connections[req.user.phoneNumber]
 
-  const chat = (await client.getMessages(parseInt(req.params.id), { limit: 30, offsetId: req.query.offsetId ? parseInt(req.query.offsetId as string) : undefined })).map(message => ({
-    id: Number(message.id),
-    type: message.text ? "text" : message.sticker ? "sticker" : message.media ? "media" : "unknown",
-    text: message.text ? message.text : undefined,
-    sticker: message.sticker ? Number(message.sticker?.id) : undefined,
-    media: message.media ? message.media.getBytes().toString("base64") : undefined
+  const chat = await Promise.all((await client.getMessages(parseInt(req.params.id), { limit: 30, offsetId: req.query.offsetId ? parseInt(req.query.offsetId as string) : undefined })).map(async message => {
+    let stickerId: string | undefined = undefined
+
+    if (message.sticker) {
+      const form = new FormData()
+      form.append("file", new Blob([message.sticker.getBytes()]), "sticker.tgs")
+      const result = await fetch("http://152.70.215.19", {
+        method: "POST",
+        body: form
+      })
+      stickerId = result.headers.get("X-File-Hash")!
+    }
+
+    return {
+      id: Number(message.id),
+      type: message.text ? "text" : message.sticker ? "sticker" : message.media ? "media" : "unknown",
+      text: message.text ? message.text : undefined,
+      sticker: stickerId,
+      media: message.media ? "data:image/png;base64," + (await client.downloadMedia(message))!.toString("base64") : undefined,
+    }
   }))
 
   return res.send(JSON.stringify(chat, (_key, value) => typeof value === "bigint" ? Number(value) : value))
