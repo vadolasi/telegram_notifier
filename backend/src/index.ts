@@ -306,6 +306,7 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
           method: "POST",
           body: form
         })
+        console.log(stickerId)
         stickerId = result.headers.get("X-File-Hash")!
       }
     } catch (e) {
@@ -317,7 +318,7 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
       type: message.text ? "text" : message.sticker ? "sticker" : message.media ? "media" : "unknown",
       text: message.text ? message.text : undefined,
       sticker: stickerId,
-      media: message.media ? "data:image/png;base64," + (await client.downloadMedia(message))!.toString("base64") : undefined,
+      media: message.media && !message.sticker ? "data:image/png;base64," + (await client.downloadMedia(message))!.toString("base64") : undefined,
     }
   }))
 
