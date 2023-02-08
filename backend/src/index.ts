@@ -11,7 +11,6 @@ import { NewMessage, NewMessageEvent } from "telegram/events"
 import express from "express"
 import cors from "cors"
 import http from "http"
-import { message } from "telegram/client"
 
 config()
 
@@ -299,14 +298,18 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
   const chat = await Promise.all((await client.getMessages(parseInt(req.params.id), { limit: 30, offsetId: req.query.offsetId ? parseInt(req.query.offsetId as string) : undefined })).map(async message => {
     let stickerId: string | undefined = undefined
 
-    if (message.sticker) {
-      const form = new FormData()
-      form.append("file", new Blob([message.sticker.getBytes()]), "sticker.tgs")
-      const result = await fetch("http://152.70.215.19", {
-        method: "POST",
-        body: form
-      })
-      stickerId = result.headers.get("X-File-Hash")!
+    try {
+      if (message.sticker) {
+        const form = new FormData()
+        form.append("file", new Blob([message.sticker.getBytes()]), "sticker.tgs")
+        const result = await fetch("http://152.70.215.19", {
+          method: "POST",
+          body: form
+        })
+        stickerId = result.headers.get("X-File-Hash")!
+      }
+    } catch (e) {
+      console.log(e)
     }
 
     return {
