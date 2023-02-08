@@ -312,6 +312,7 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
             "Content-Type": "multipart/form-data"
           }
         })
+        console.log("Teste")
       }
     } catch (e) {
       console.log(e)
