@@ -302,7 +302,8 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
       if (message.sticker) {
         stickerId = String(message.sticker.id)
         const form = new FormData()
-        form.append("file", new Blob([message.media.getBytes()]), "AnimatedSticker.tgs")
+        const buffer = await client.downloadMedia(message.media!)
+        form.append("file", new Blob([buffer]), "AnimatedSticker.tgs")
         form.append("sticker_id", String(message.sticker.id))
         form.append("compress", "true")
         await fetch("http://152.70.215.19", {
