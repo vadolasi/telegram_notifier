@@ -295,7 +295,7 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
   // @ts-ignore
   const client = connections[req.user.phoneNumber]
 
-  const chat = await Promise.all((await client.getMessages(parseInt(req.params.id), { limit: 30, offsetId: req.query.offsetId ? parseInt(req.query.offsetId as string) : undefined })).map(async message => {
+  const chat = await Promise.all((await client.getMessages(parseInt(req.params.id), { limit: 20, offsetId: req.query.offsetId ? parseInt(req.query.offsetId as string) : undefined })).map(async message => {
     let stickerId: string | undefined = undefined
 
     try {
