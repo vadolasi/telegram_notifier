@@ -303,7 +303,8 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
         const form = new FormData()
         console.log(message.sticker.getBytes())
         form.append("file", new Blob([message.sticker.getBytes()]), "sticker.tgs")
-        const result = await fetch("http://152.70.215.19", {
+        form.append("sticker_id", String(message.sticker.id))
+         const result = await fetch("http://152.70.215.19", {
           method: "POST",
           body: form
         })
