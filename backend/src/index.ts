@@ -307,12 +307,8 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
         form.append("compress", "true")
         await fetch("http://152.70.215.19", {
           method: "POST",
-          body: form,
-          headers: {
-            "Content-Type": "multipart/form-data"
-          }
+          body: form
         })
-        console.log("Teste")
       }
     } catch (e) {
       console.log(e)
