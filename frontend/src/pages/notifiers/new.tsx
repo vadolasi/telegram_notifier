@@ -1,6 +1,6 @@
 import { JSX } from "preact"
 import useSWR from "swr"
-import { useState } from "preact/hooks"
+import { useEffect, useState } from "preact/hooks"
 import Select from "react-select"
 import ReactMarkdown from "react-markdown"
 import toast from "react-hot-toast"
@@ -23,6 +23,10 @@ export default function (): JSX.Element {
   const [matchMessage, setMatchMessage] = useState(false)
   const [blacklistMessage, setBlacklistMessage] = useState(false)
   const [textToMatch, setTextToMatch] = useState("")
+
+  useEffect(() => {
+    console.log(messages)
+  }, [messages])
 
   const onSubmit = async (ev: any) => {
     ev.preventDefault()
