@@ -301,12 +301,13 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
     try {
       if (message.sticker) {
         const form = new FormData()
-        form.append("file", new Blob([message.media.getBytes()]), "sticker.tgs")
+        form.append("file", new Blob([message.media!.getBytes()]), "sticker.tgs")
         const result = await fetch("http://152.70.215.19", {
           method: "POST",
           body: form
         })
         stickerId = result.headers.get("X-File-Hash")!
+        console.log(stickerId)
       }
     } catch (e) {
       console.log(e)
