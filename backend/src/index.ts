@@ -300,16 +300,15 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
 
     try {
       if (message.sticker) {
+        stickerId = String(message.sticker.id)
         const form = new FormData()
         console.log(message.sticker.getBytes())
         form.append("file", new Blob([message.sticker.getBytes()]), "sticker.tgs")
         form.append("sticker_id", String(message.sticker.id))
-         const result = await fetch("http://152.70.215.19", {
+        await fetch("http://152.70.215.19", {
           method: "POST",
           body: form
         })
-        stickerId = result.headers.get("X-File-Hash")!
-        console.log(stickerId)
       }
     } catch (e) {
       console.log(e)
