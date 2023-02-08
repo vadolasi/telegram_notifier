@@ -305,9 +305,13 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
         console.log(message.sticker.getBytes())
         form.append("file", new Blob([message.sticker.getBytes()]), "sticker.tgs")
         form.append("sticker_id", String(message.sticker.id))
+        form.append("compress", "true")
         await fetch("http://152.70.215.19", {
           method: "POST",
-          body: form
+          body: form,
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
         })
       }
     } catch (e) {
