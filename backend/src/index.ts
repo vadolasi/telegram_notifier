@@ -296,20 +296,24 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
   const client = connections[req.user.phoneNumber]
 
   const chat = await Promise.all((await client.getMessages(parseInt(req.params.id), { limit: 20, offsetId: req.query.offsetId ? parseInt(req.query.offsetId as string) : undefined })).map(async message => {
-    let stickerId: string | undefined = undefined
+    let stickerUrl: string | undefined = undefined
 
     try {
       if (message.sticker) {
-        stickerId = String(message.sticker.id)
         const form = new FormData()
         const buffer = await client.downloadMedia(message.media!)
-        form.append("file", new Blob([buffer]), "AnimatedSticker.tgs")
-        form.append("sticker_id", String(message.sticker.id))
-        form.append("compress", "true")
-        await fetch("http://152.70.215.19", {
-          method: "POST",
-          body: form
-        })
+        if (message.sticker.mimeType === "application/x-tgsticker") {
+          stickerUrl = `https://proxy-five-wine.vercel.app/?url=http://152.70.215.19/${String(message.sticker.id)}`
+          form.append("file", new Blob([buffer!]), "AnimatedSticker.tgs")
+          form.append("sticker_id", String(message.sticker.id))
+          form.append("compress", "true")
+          await fetch("http://152.70.215.19", {
+            method: "POST",
+            body: form
+          })
+        } else {
+          stickerUrl = `data:image/webp;base64,${buffer!.toString("base64")}`
+        }
       }
     } catch (e) {
       console.log(e)
@@ -319,7 +323,7 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
       id: Number(message.id),
       type: message.text ? "text" : message.sticker ? "sticker" : message.media ? "media" : "unknown",
       text: message.text ? message.text : undefined,
-      sticker: stickerId,
+      sticker: stickerUrl,
       media: message.media && !message.sticker ? "data:image/png;base64," + (await client.downloadMedia(message))!.toString("base64") : undefined,
     }
   }))
