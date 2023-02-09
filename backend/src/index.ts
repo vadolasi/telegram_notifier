@@ -402,7 +402,7 @@ interface TextMessage {
 
 interface StickerMessage {
   type: "sticker"
-  sticker: number
+  sticker: string
 }
 
 interface MediaMessage {
@@ -453,7 +453,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
           if (ev.message.text) {
             message = { type: "text", text: ev.message.text }
           } else if (ev.message.sticker) {
-            message = { type: "sticker", sticker: Number(ev.message.sticker?.id) }
+            message = { type: "sticker", sticker: String(ev.message.sticker?.id) }
           } else if (ev.message.media) {
             message = { type: "media", media: ev.message.media.getBytes().toString("base64") }
           } else {
@@ -484,7 +484,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
         })
 
         if (forwarder) {
-          const rule: { messages: { type: "text" | "sticker" | "media", contains?: boolean, text?: string, sticker: number }[] } = JSON.parse(forwarder.rule)
+          const rule: { messages: { type: "text" | "sticker" | "media", contains?: boolean, text?: string, sticker: string }[] } = JSON.parse(forwarder.rule)
 
           rule.messages.forEach(async rule => {
             if (rule.type === "text" && (rule.contains ? ev.message.text?.includes(rule.text!) : ev.message.text === rule.text)) {
@@ -493,7 +493,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
               })
               // @ts-ignore
               await handler({ ...ev, message })
-            } else if ((rule.type === "sticker") && Number(ev.message.sticker?.id) === rule.sticker) {
+            } else if ((rule.type === "sticker") && String(ev.message.sticker?.id) === rule.sticker) {
               const message = await connections[user.phoneNumber].sendMessage(Number(forwarder.toChat), {
                 file: ev.message.media!
               })
