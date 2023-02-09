@@ -324,7 +324,7 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
       type: message.text ? "text" : message.sticker ? "sticker" : message.media ? "media" : "unknown",
       text: message.text ? message.text : undefined,
       stickerUrl,
-      sticker: String(message.sticker.id),
+      sticker: message.sticker ? String(message.sticker.id) : undefined,
       media: message.media && !message.sticker ? "data:image/png;base64," + (await client.downloadMedia(message))!.toString("base64") : undefined,
     }
   }))
