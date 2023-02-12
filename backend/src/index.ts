@@ -437,7 +437,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
       })
 
       const handler = async (ev: NewMessageEvent) => {
-        const notifier = await prisma.notifier.findFirst({
+        const notifiers = await prisma.notifier.findMany({
           where: {
             chatId: Number(ev.message.chatId),
             // @ts-ignore
@@ -445,7 +445,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
           }
         })
 
-        if (notifier) {
+        notifiers.forEach(async notifier => {
           const rule: { countMessages: Message[], includesText?: string, resetMessages?: Message[], count: number, continuos?: boolean } = JSON.parse(notifier.rule)
 
           let message: Message
@@ -473,9 +473,9 @@ type Message = TextMessage | StickerMessage | MediaMessage
           } else if (rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message))) {
             await redis.del(`notifier:${notifier.id}`)
           }
-        }
+        })
 
-        const forwarder = await prisma.forwarder.findFirst({
+        const forwarders = await prisma.forwarder.findMany({
           where: {
             fromChat: Number(ev.message.chatId),
             // @ts-ignore
@@ -483,7 +483,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
           }
         })
 
-        if (forwarder) {
+        forwarders.forEach(async forwarder => {
           const rule: { messages: { type: "text" | "sticker" | "media", contains?: boolean, text?: string, sticker: string }[] } = JSON.parse(forwarder.rule)
 
           rule.messages.forEach(async rule => {
@@ -507,7 +507,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
               await handler({ ...ev, message })
             }
           })
-        }
+        })
       }
 
       connections[user.phoneNumber].addEventHandler(handler, new NewMessage({}))
