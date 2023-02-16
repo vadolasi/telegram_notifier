@@ -470,7 +470,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
             }
           } else if (rule.continuos) {
             await redis.del(`notifier:${notifier.id}`)
-          } else if (rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message))) {
+          } else if (!rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message))) {
             await redis.del(`notifier:${notifier.id}`)
           }
         })

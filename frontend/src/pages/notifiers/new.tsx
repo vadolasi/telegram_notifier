@@ -21,7 +21,6 @@ export default function (): JSX.Element {
   const [continuos, setContinuos] = useState(false)
   const [includesText, setIncludesText] = useState(false)
   const [matchMessage, setMatchMessage] = useState(false)
-  const [blacklistMessage, setBlacklistMessage] = useState(false)
   const [textToMatch, setTextToMatch] = useState("")
 
   useEffect(() => {
@@ -33,7 +32,7 @@ export default function (): JSX.Element {
 
     const data = { name, chatId: chat, message, rule: {
       count: quantity,
-      continuos: continuos ? true : undefined,
+      continuos,
       includesText: includesText ? textToMatch : undefined,
       countMessages: messagesSelected.map((message: any) => {
         const m = messages?.find((m: any) => m.id === message)
@@ -130,22 +129,14 @@ export default function (): JSX.Element {
                 </div>
               )}
               <h2>Reset</h2>
-              <fieldset>
-                <label htmlFor="continuos">
-                  <input type="radio" id="continuos" onChange={() => {setContinuos(true);setBlacklistMessage(false)}} checked={continuos} value="1" />
-                  Apenas mensagens em seguida
-                </label>
-                <label htmlFor="igual">
-                  <input type="radio" id="igual" onChange={() => {setContinuos(false);setBlacklistMessage(true)}} checked={blacklistMessage} value="2" />
-                  Blacklist de mensagens
-                </label>
-              </fieldset>
-              {blacklistMessage && (
-                <div>
-                  <label htmlFor="balcklistMessage">Balcklist Message</label>
-                  <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker ? message.stickerUrl : message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
-                </div>
-              )}
+              <label htmlFor="continuos">
+                <input type="checkbox" id="continuos" onChange={() => {setContinuos(!continuos)}} checked={continuos} />
+                Apenas mensagens em seguida
+              </label>
+              <div>
+                <label htmlFor="balcklistMessage">Balcklist Message</label>
+                <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker ? message.stickerUrl : message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
+              </div>
             </>
           )}
         </div>
