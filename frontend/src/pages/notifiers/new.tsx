@@ -21,7 +21,10 @@ export default function (): JSX.Element {
   const [continuos, setContinuos] = useState(false)
   const [includesText, setIncludesText] = useState(false)
   const [matchMessage, setMatchMessage] = useState(false)
+  const [includesTextB, setIncludesTextB] = useState(false)
+  const [matchMessageB, setMatchMessageB] = useState(false)
   const [textToMatch, setTextToMatch] = useState("")
+  const [textToMatchB, setTextToMatchB] = useState<"">("")
 
   useEffect(() => {
     console.log(messages)
@@ -34,6 +37,7 @@ export default function (): JSX.Element {
       count: quantity,
       continuos,
       includesText: includesText ? textToMatch : undefined,
+      textToMatchB: includesTextB ? textToMatchB : undefined,
       countMessages: messagesSelected.map((message: any) => {
         const m = messages?.find((m: any) => m.id === message)
 
@@ -133,10 +137,29 @@ export default function (): JSX.Element {
                 <input type="checkbox" id="continuos" onChange={() => {setContinuos(!continuos)}} checked={continuos} />
                 Apenas mensagens em seguida
               </label>
-              <div>
-                <label htmlFor="balcklistMessage">Balcklist Message</label>
-                <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker ? message.stickerUrl : message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
-              </div>
+              <h2>Blacklist</h2>
+              <fieldset>
+                <label htmlFor="includeb">
+                  <input type="radio" id="includeb" onChange={() => {setIncludesTextB(true);setMatchMessageB(false)}} checked={includesText} value="1" />
+                  Contém texto
+                </label>
+                <label htmlFor="exactb">
+                  <input type="radiob" id="exact" onChange={() =>{setIncludesTextB(false);setMatchMessageB(true)}} checked={matchMessage} value="2" />
+                  Igual à mensagem
+                </label>
+              </fieldset>
+              {matchMessageB && (
+                <div>
+                  <label htmlFor="balcklistMessage">Balcklist Message</label>
+                  <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker ? message.stickerUrl : message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
+                </div>
+              )}
+              {includesTextB && (
+                <div>
+                  <label htmlFor="textToMatchB">Text to match</label>
+                  <input type="text" id="textToMatchB" onChange={(e) => setTextToMatchB((e.target as any).value)} />
+                </div>
+              )}
             </>
           )}
         </div>

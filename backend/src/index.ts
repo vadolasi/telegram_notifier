@@ -446,7 +446,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
         })
 
         notifiers.forEach(async notifier => {
-          const rule: { countMessages: Message[], includesText?: string, resetMessages?: Message[], count: number, continuos?: boolean } = JSON.parse(notifier.rule)
+          const rule: { countMessages: Message[], includesText?: string, resetMessages?: Message[], count: number, continuos?: boolean, includesTextB?: string } = JSON.parse(notifier.rule)
 
           let message: Message
 
@@ -468,9 +468,9 @@ type Message = TextMessage | StickerMessage | MediaMessage
 
               await redis.del(`notifier:${notifier.id}`)
             }
-          } else if (rule.continuos) {
+          } else if (!(rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message)) || (rule.includesTextB && ev.message.text?.includes(rule.includesTextB)))) {
             await redis.del(`notifier:${notifier.id}`)
-          } else if (!rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message))) {
+          } else if (rule.continuos) {
             await redis.del(`notifier:${notifier.id}`)
           }
         })
