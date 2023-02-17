@@ -144,7 +144,7 @@ export default function (): JSX.Element {
                   Contém texto
                 </label>
                 <label htmlFor="exactb">
-                  <input type="radiob" id="exact" onChange={() =>{setIncludesTextB(false);setMatchMessageB(true)}} checked={matchMessageB} value="2" />
+                  <input type="radio" id="exact" onChange={() =>{setIncludesTextB(false);setMatchMessageB(true)}} checked={matchMessageB} value="2" />
                   Igual à mensagem
                 </label>
               </fieldset>
