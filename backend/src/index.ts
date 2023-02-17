@@ -468,10 +468,10 @@ type Message = TextMessage | StickerMessage | MediaMessage
 
               await redis.del(`notifier:${notifier.id}`)
             }
-          } else if (!(rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message)) || (rule.includesTextB && ev.message.text?.includes(rule.includesTextB)))) {
-            await redis.del(`notifier:${notifier.id}`)
           } else if (rule.continuos) {
-            await redis.del(`notifier:${notifier.id}`)
+            if (!(rule.resetMessages?.find(m => JSON.stringify(m) === JSON.stringify(message)) || (rule.includesTextB && ev.message.text?.includes(rule.includesTextB)))) {
+              await redis.del(`notifier:${notifier.id}`)
+            }
           }
         })
 
