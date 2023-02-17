@@ -140,11 +140,11 @@ export default function (): JSX.Element {
               <h2>Blacklist</h2>
               <fieldset>
                 <label htmlFor="includeb">
-                  <input type="radio" id="includeb" onChange={() => {setIncludesTextB(true);setMatchMessageB(false)}} checked={includesText} value="1" />
+                  <input type="radio" id="includeb" onChange={() => {setIncludesTextB(true);setMatchMessageB(false)}} checked={includesTextB} value="1" />
                   Contém texto
                 </label>
                 <label htmlFor="exactb">
-                  <input type="radiob" id="exact" onChange={() =>{setIncludesTextB(false);setMatchMessageB(true)}} checked={matchMessage} value="2" />
+                  <input type="radiob" id="exact" onChange={() =>{setIncludesTextB(false);setMatchMessageB(true)}} checked={matchMessageB} value="2" />
                   Igual à mensagem
                 </label>
               </fieldset>
