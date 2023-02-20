@@ -17,7 +17,7 @@ export default function (): JSX.Element {
         <ul>
           {notifiers.map((notifier: any) => (
             <li key={notifier.id}>
-              <a href={`/notifiers/${notifier.id}`}>{notifier.name}</a>
+              <a href={`/notifiers/${notifier.id}`}>{notifier.name || "<Sem nome>"}</a>
             </li>
           ))}
         </ul>
@@ -31,7 +31,7 @@ export default function (): JSX.Element {
         <ul>
           {forwarders.map((forwarder: any) => (
             <li key={forwarder.id}>
-              <a href={`/forwarders/${forwarder.id}`}>{forwarder.name}</a>
+              <a href={`/forwarders/${forwarder.id}`}>{forwarder.name || "<Sem nome>"}</a>
             </li>
           ))}
         </ul>

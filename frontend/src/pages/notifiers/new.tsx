@@ -132,21 +132,15 @@ export default function (): JSX.Element {
                   {textsToMatch.map((text, index) => (
                     <div key={index} className="flex items-center gap-4">
                       <input type="text" value={text} onChange={(e) => {
-                        const texts = textsToMatch
-                        texts[index] = (e.target as any).value
-                        setTextsToMatch(texts)
+                        setTextsToMatch(textsToMatch.map((t, i) => i === index ? (e.target as any).value : t))
                       }} />
                       <button type="button" onClick={() => {
-                        const texts = textsToMatch
-                        texts.splice(index, 1)
-                        setTextsToMatch(texts)
+                        setTextsToMatch(textsToMatch.filter((_, i) => i !== index))
                       }}>X</button>
                     </div>
                   ))}
                   <button type="button" onClick={() => {
-                    const texts = textsToMatch
-                    texts.push("")
-                    setTextsToMatch(texts)
+                    setTextsToMatch(textsToMatch => [...textsToMatch, ""])
                   }}>Adicionar</button>
                 </div>
               )}
@@ -178,21 +172,19 @@ export default function (): JSX.Element {
                   {textsToMatchB.map((text, index) => (
                     <div key={index} className="flex items-center gap-4">
                       <input type="text" value={text} onChange={(e) => {
-                        const texts = textsToMatchB
-                        texts[index] = (e.target as any).value
-                        setTextsToMatchB(texts)
+                        setTextsToMatchB(textsToMatchB => {
+                          const texts = textsToMatchB
+                          texts[index] = (e.target as any).value
+                          return texts
+                        })
                       }} />
                       <button type="button" onClick={() => {
-                        const texts = textsToMatchB
-                        texts.splice(index, 1)
-                        setTextsToMatchB(texts)
+                        setTextsToMatchB(textsToMatchB => textsToMatchB.filter((_, i) => i !== index))
                       }}>X</button>
                     </div>
                   ))}
                   <button type="button" onClick={() => {
-                    const texts = textsToMatchB
-                    texts.push("")
-                    setTextsToMatchB(texts)
+                    setTextsToMatchB(textsToMatchB => [...textsToMatchB, ""])
                   }}>Adicionar</button>
                 </div>
               )}
