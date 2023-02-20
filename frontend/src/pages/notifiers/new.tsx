@@ -23,8 +23,8 @@ export default function (): JSX.Element {
   const [matchMessage, setMatchMessage] = useState(false)
   const [includesTextB, setIncludesTextB] = useState(false)
   const [matchMessageB, setMatchMessageB] = useState(false)
-  const [textToMatch, setTextToMatch] = useState("")
-  const [textToMatchB, setTextToMatchB] = useState<"">("")
+  const [textsToMatch, setTextsToMatch] = useState<string[]>([])
+  const [textsToMatchB, setTextsToMatchB] = useState<string[]>([])
 
   useEffect(() => {
     console.log(messages)
@@ -36,8 +36,8 @@ export default function (): JSX.Element {
     const data = { name, chatId: chat, message, rule: {
       count: quantity,
       continuos,
-      includesText: includesText ? textToMatch : undefined,
-      textToMatchB: includesTextB ? textToMatchB : undefined,
+      includesText: includesText ? textsToMatch : undefined,
+      textToMatchB: includesTextB ? textsToMatchB : undefined,
       countMessages: messagesSelected.map((message: any) => {
         const m = messages?.find((m: any) => m.id === message)
 
@@ -129,7 +129,25 @@ export default function (): JSX.Element {
               {includesText && (
                 <div>
                   <label htmlFor="textToMatch">Text to match</label>
-                  <input type="text" id="textToMatch" onChange={(e) => setTextToMatch((e.target as any).value)} />
+                  {textsToMatch.map((text, index) => (
+                    <div key={index} className="flex items-center gap-4">
+                      <input type="text" value={text} onChange={(e) => {
+                        const texts = textsToMatch
+                        texts[index] = (e.target as any).value
+                        setTextsToMatch(texts)
+                      }} />
+                      <button type="button" onClick={() => {
+                        const texts = textsToMatch
+                        texts.splice(index, 1)
+                        setTextsToMatch(texts)
+                      }}>X</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => {
+                    const texts = textsToMatch
+                    texts.push("")
+                    setTextsToMatch(texts)
+                  }}>Adicionar</button>
                 </div>
               )}
               <h2>Reset</h2>
@@ -151,13 +169,31 @@ export default function (): JSX.Element {
               {matchMessageB && (
                 <div>
                   <label htmlFor="balcklistMessage">Balcklist Message</label>
-                  <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker ? message.stickerUrl : message.media} /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
+                  <Select placeholder="Selecione a mensagem..." isMulti options={messages?.map((message: any) => ({ value: message.id, label: message.type === "text" ? <ReactMarkdown className="truncate overflow-hidden">{message.text}</ReactMarkdown> : <div className="flex items-center gap-4"><img src={message.sticker ? message.stickerUrl : message.media} width="64" height="64" /><span>{message.type}</span></div> }))} onChange={(e: any) => setBalcklistMessagesSelected(e.map((m: any) => m.value))} />
                 </div>
               )}
               {includesTextB && (
                 <div>
                   <label htmlFor="textToMatchB">Text to match</label>
-                  <input type="text" id="textToMatchB" onChange={(e) => setTextToMatchB((e.target as any).value)} />
+                  {textsToMatchB.map((text, index) => (
+                    <div key={index} className="flex items-center gap-4">
+                      <input type="text" value={text} onChange={(e) => {
+                        const texts = textsToMatchB
+                        texts[index] = (e.target as any).value
+                        setTextsToMatchB(texts)
+                      }} />
+                      <button type="button" onClick={() => {
+                        const texts = textsToMatchB
+                        texts.splice(index, 1)
+                        setTextsToMatchB(texts)
+                      }}>X</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => {
+                    const texts = textsToMatchB
+                    texts.push("")
+                    setTextsToMatchB(texts)
+                  }}>Adicionar</button>
                 </div>
               )}
             </>
