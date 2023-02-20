@@ -37,7 +37,7 @@ export default function (): JSX.Element {
       count: quantity,
       continuos,
       includesText: includesText ? textsToMatch : undefined,
-      textToMatchB: includesTextB ? textsToMatchB : undefined,
+      includesTextB: includesTextB ? textsToMatchB : undefined,
       countMessages: messagesSelected.map((message: any) => {
         const m = messages?.find((m: any) => m.id === message)
 
