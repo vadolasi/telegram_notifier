@@ -4,5 +4,5 @@ import Unocss from "unocss/vite"
 import Pages from "vite-plugin-pages"
 
 export default defineConfig({
-  plugins: [preact(), Unocss(), Pages({ resolver: "react", importMode: "sync" })],
+  plugins: [preact(), Unocss(), Pages({ resolver: "react", importMode: "sync" })]
 })
