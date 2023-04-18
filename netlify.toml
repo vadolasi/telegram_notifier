@@ -3,6 +3,11 @@
   functions = "netlify/functions"
   publish = "dist"
   base = "frontend"
+  # npm flags
+
+[build.environment]
+NODE_ENV = "production"
+NPM_FLAGS = "--prefer-offline --no-audit --progress=false --legacy-peer-deps"
 
 [[redirects]]
   from = "/*"
