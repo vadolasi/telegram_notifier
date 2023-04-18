@@ -1,4 +1,4 @@
-import { TelegramClient } from "telegram"
+import { Api, TelegramClient } from "telegram"
 import { StringSession } from "telegram/sessions"
 import { PrismaClient } from "@prisma/client"
 import Redis from "ioredis"
@@ -30,7 +30,7 @@ const io = new Server(server, { transports: ["polling"], cors: { origin: "*" } }
 
 const JWT_SECRET = process.env.JWT_SECRET!
 
-const jwtMiddleware = (req, res, next) => {
+const jwtMiddleware = (req: any, res: any, next: any) => {
   const token = req.headers.authorization
 
   if (!token) {
@@ -205,6 +205,28 @@ bot.on("message", async (msg) => {
   }
 })
 
+app.post("/massive_add", jwtMiddleware, async (req, res) => {
+  // @ts-ignore
+  const client = connections[req.user.phoneNumber]
+
+  const entity = await client.getEntity(req.body.toChatId)
+
+  res.status(200).json({})
+
+  for await (const participant of client.iterParticipants(req.body.chatId)) {
+    try {
+      await client.invoke(
+        new Api.channels.InviteToChannel({
+          channel: entity,
+          users: [participant]
+        })
+      )
+    } catch (error) {
+      console.log(error)
+    }
+  }
+})
+
 app.get("/notifiers", jwtMiddleware, async (req, res) => {
   // @ts-ignore
   const userId = req.user.id
@@ -303,7 +325,7 @@ app.get("/chats/:id", jwtMiddleware, async (req, res) => {
         const form = new FormData()
         const buffer = await client.downloadMedia(message.media!)
         if (message.sticker.mimeType === "application/x-tgsticker") {
-          stickerUrl = `https://proxy-five-wine.vercel.app/?url=http://152.70.215.19/${String(message.sticker.id)}`
+          stickerUrl = `http://152.70.215.19/${String(message.sticker.id)}`
           form.append("file", new Blob([buffer!]), "AnimatedSticker.tgs")
           form.append("sticker_id", String(message.sticker.id))
           form.append("compress", "true")
