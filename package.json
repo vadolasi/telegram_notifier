@@ -1,5 +1,6 @@
 {
 	"devDependencies": {
 		"typescript": "^4.9.3"
-	}
+	},
+  "packageManager": "pnpm@6.3.2"
 }
