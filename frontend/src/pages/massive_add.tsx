@@ -45,8 +45,10 @@ export default function (): JSX.Element {
       <h1>Novo Repassador</h1>
       <form onSubmit={onSubmit}>
         <div>
-          <label htmlFor="name">Nome</label>
-          <input type="text" id="name" onChange={(e) => setName((e.target as any).value)} />
+          <label htmlFor="velocity">Velocidade</label>
+          <select name="velocity" id="velocity">
+            <option value="1">O mais rápido possível</option>
+          </select>
         </div>
         <div>
           <label htmlFor="fromChat">Chat de recebimento</label>
