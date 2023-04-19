@@ -51,11 +51,11 @@ export default function (): JSX.Element {
           </select>
         </div>
         <div>
-          <label htmlFor="fromChat">Chat de recebimento</label>
+          <label htmlFor="fromChat">Chat inicial</label>
           <Select placeholder="Selecione o chat..." options={chats?.map((chat: any) => ({ value: chat.id, label: <div className="flex items-center gap-4"><img className="rounded-full w-10 h-10" src={` data:image/jpeg;charset=utf-8;base64,${chat.image}`} /><span>{chat.name}</span></div> }))} onChange={(e: any) => setFromChat(e.value)} />
         </div>
         <div>
-          <label htmlFor="toChat">Chat de envio</label>
+          <label htmlFor="toChat">Chat final</label>
           <Select placeholder="Selecione o chat..." options={chats?.map((chat: any) => ({ value: chat.id, label: <div className="flex items-center gap-4"><img className="rounded-full w-10 h-10" src={` data:image/jpeg;charset=utf-8;base64,${chat.image}`} /><span>{chat.name}</span></div> }))} onChange={(e: any) => setToChat(e.value)} />
         </div>
         <div>
