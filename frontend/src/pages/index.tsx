@@ -37,6 +37,7 @@ export default function (): JSX.Element {
         </ul>
       )}
       <a href="/forwarders/new">Novo repassador</a>
+      <a href="/massive_add">Adicionar membros em massa</a>
     </div>
   )
 }
