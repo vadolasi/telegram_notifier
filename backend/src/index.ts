@@ -210,6 +210,7 @@ app.post("/massive_add", jwtMiddleware, async (req, res) => {
   const client = connections[req.user.phoneNumber]
 
   const entity = await client.getEntity(req.body.toChat)
+  const inputEntity = await client.getInputEntity(entity)
 
   res.status(200).json({})
 
@@ -226,7 +227,7 @@ app.post("/massive_add", jwtMiddleware, async (req, res) => {
     try {
       await client.invoke(
         new Api.channels.InviteToChannel({
-          channel: entity,
+          channel: inputEntity,
           users: [participant]
         })
       )
