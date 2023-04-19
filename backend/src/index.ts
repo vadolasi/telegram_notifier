@@ -210,13 +210,20 @@ app.post("/massive_add", jwtMiddleware, async (req, res) => {
   const client = connections[req.user.phoneNumber]
 
   const entity = await client.getEntity(req.body.toChat)
-  console.log(entity)
 
   res.status(200).json({})
 
   for await (const participant of client.iterParticipants(await client.getEntity(req.body.fromChat))) {
     try {
-      console.log("Participante: ", participant)
+      new Api.messages.AddChatUser({
+        chatId: entity.id,
+        userId: participant.id,
+        fwdLimit: 0
+      })
+    } catch (error) {
+      console.log(error)
+    }
+    try {
       await client.invoke(
         new Api.channels.InviteToChannel({
           channel: entity,
