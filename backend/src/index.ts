@@ -218,12 +218,12 @@ app.post("/massive_add", jwtMiddleware, async (req, res) => {
     try {
       new Api.messages.AddChatUser({
         chatId: entity.id,
-        userId: participant.id,
-        fwdLimit: 0
+        userId: await client.getInputEntity(participant)
       })
     } catch (error) {
       console.log(error)
     }
+
     try {
       await client.invoke(
         new Api.channels.InviteToChannel({
