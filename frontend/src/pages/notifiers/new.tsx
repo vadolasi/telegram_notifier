@@ -12,6 +12,7 @@ export default function (): JSX.Element {
   const [chat, setChat] = useState<number | null>(null)
   const { data: chats, error: chatsError } = useSWR("/chats", fetcher)
   const { data: messages, error: messagesError } = useSWR(chat ? `/chats/${chat}` : undefined, fetcher)
+  const { data: phoneNumbers, error: phoneNumbersError } = useSWR("/phones", fetcher)
   const navigate = useNavigate()
   const [name, setName] = useState("")
   const [message, setMessage] = useState("")
@@ -25,6 +26,7 @@ export default function (): JSX.Element {
   const [matchMessageB, setMatchMessageB] = useState(false)
   const [textsToMatch, setTextsToMatch] = useState<string[]>([])
   const [textsToMatchB, setTextsToMatchB] = useState<string[]>([])
+  const [number, setNumber] = useState("")
 
   useEffect(() => {
     console.log(messages)
@@ -36,6 +38,7 @@ export default function (): JSX.Element {
     const data = { name, chatId: chat, message, rule: {
       count: quantity,
       continuos,
+      phoneNumberId: number,
       includesText: includesText ? textsToMatch : undefined,
       includesTextB: includesTextB ? textsToMatchB : undefined,
       countMessages: messagesSelected.map((message: any) => {
@@ -103,6 +106,10 @@ export default function (): JSX.Element {
         <div>
           <label htmlFor="name">Nome</label>
           <input type="text" id="name" onChange={(e) => setName((e.target as any).value)} />
+        </div>
+        <div>
+          <label htmlFor="number">Número</label>
+          <Select placeholder="Selecione o número..." options={phoneNumbers?.map((phone: any) => ({ value: phone.id, label: phone.number }))} onChange={(e: any) => setNumber(e.value)} />
         </div>
         <div>
           <label htmlFor="chat">Chats</label>

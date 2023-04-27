@@ -8,29 +8,38 @@ datasource db {
 }
 
 model User {
+  id           String @id @default(uuid())
+  email        String @unique
+  phoneNumbers phoneNumber[]
+  password     String
+}
+
+model phoneNumber {
   id          BigInt @id
   phoneNumber String @unique
   session     String
+  user        User   @relation(fields: [userId], references: [id])
+  userId      String
   notifiers   Notifier[]
   forwarders  Forwarder[]
 }
 
 model Notifier {
-  id        String @id @default(uuid())
-  name      String
-  chatId    BigInt
-  rule      String
-  message   String
-  user      User   @relation(fields: [userId], references: [id])
-  userId    BigInt
+  id       String      @id @default(uuid())
+  name     String
+  chatId   BigInt
+  rule     String
+  message  String
+  phone    phoneNumber @relation(fields: [phoneId], references: [id])
+  phoneId  BigInt
 }
 
 model Forwarder {
-  id        String @id @default(uuid())
-  name      String
-  fromChat  BigInt
-  toChat    BigInt
-  rule      String
-  user      User   @relation(fields: [userId], references: [id])
-  userId    BigInt
+  id       String      @id @default(uuid())
+  name     String
+  fromChat BigInt
+  toChat   BigInt
+  rule     String
+  phone    phoneNumber @relation(fields: [phoneId], references: [id])
+  phoneId  BigInt
 }

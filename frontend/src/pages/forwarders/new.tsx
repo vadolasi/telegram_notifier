@@ -6,18 +6,20 @@ import ReactMarkdown from "react-markdown"
 import toast from "react-hot-toast"
 import { useNavigate } from "react-router-dom"
 
-const fetcher = (url: string) => fetch(`${import.meta.env.VITE_BACKEND_URL}${url}`, { headers: { "Content-Type": "application/json", Authorization: JSON.parse(localStorage.getItem("token")!) } }).then((res) => res.json()).then((data) => data)
+const fetcher = (url: string) => fetch(`${import.meta.env.VITE_BACKEND_URL}${url}`, { headers: { "Content-Type": "application/json" } }).then((res) => res.json()).then((data) => data)
 
 export default function (): JSX.Element {
   const [name, setName] = useState("")
   const [fromChat, setFromChat] = useState<number | null>(null)
   const [toChat, setToChat] = useState<number | null>(null)
+  const [number, setNumber] = useState("")
   const [messagesSelected, setMessagesSelected] = useState([])
   const [includesText, setIncludesText] = useState(false)
   const [textsToMatch, setTextsToMatch] = useState<string[]>([])
 
   const { data: chats, error: chatsError } = useSWR("/chats", fetcher)
   const { data: messages, error: messagesError } = useSWR(fromChat ? `/chats/${fromChat}` : undefined, fetcher)
+  const { data: phoneNumbers, error: phoneNumbersError } = useSWR("/phones", fetcher)
 
   const navigate = useNavigate()
 
@@ -28,6 +30,7 @@ export default function (): JSX.Element {
       name,
       fromChat,
       toChat,
+      phoneNumberId: number,
       rule: {
         messages: includesText ? textsToMatch.map(textToMatch => {
           return {
@@ -81,6 +84,10 @@ export default function (): JSX.Element {
         <div>
           <label htmlFor="name">Nome</label>
           <input type="text" id="name" onChange={(e) => setName((e.target as any).value)} />
+        </div>
+        <div>
+          <label htmlFor="number">Número</label>
+          <Select placeholder="Selecione o número..." options={phoneNumbers?.map((phoneNumber: any) => ({ value: phoneNumber.id, label: phoneNumber.number }))} onChange={(e: any) => setNumber(e.value)} />
         </div>
         <div>
           <label htmlFor="fromChat">Chat de recebimento</label>

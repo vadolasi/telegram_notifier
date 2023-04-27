@@ -5,12 +5,14 @@ import Redis from "ioredis"
 import { config } from "dotenv"
 import { Server } from "socket.io"
 import jwt from "jsonwebtoken"
-import { randomUUID } from "crypto"
 import TelegramBot from "node-telegram-bot-api"
 import { NewMessage, NewMessageEvent } from "telegram/events"
 import express from "express"
 import cors from "cors"
 import http from "http"
+import cookieParser from "cookie-parser"
+import bcrypt from "bcrypt"
+import cookie from "cookie"
 
 config()
 
@@ -23,6 +25,7 @@ const connections: { [key: string]: TelegramClient } = {}
 const app = express()
 app.use(express.json())
 app.use(cors())
+app.use(cookieParser())
 
 const server = http.createServer(app)
 
@@ -31,7 +34,7 @@ const io = new Server(server, { transports: ["polling"], cors: { origin: "*" } }
 const JWT_SECRET = process.env.JWT_SECRET!
 
 const jwtMiddleware = (req: any, res: any, next: any) => {
-  const token = req.headers.authorization
+  const token = req.cookies.token
 
   if (!token) {
     res.status(401).send("Unauthorized")
@@ -52,36 +55,13 @@ const jwtMiddleware = (req: any, res: any, next: any) => {
 
 io.on("connection", (socket) => {
   socket.on("verify", async (phoneNumber: string) => {
-    phoneNumber = phoneNumber.replace(" ", "+")
-
     if (connections[phoneNumber]) {
-      socket.emit("alreadyConnected")
-
-      const user = (await prisma.user.findUnique({
-        where: {
-          phoneNumber
-        }
-      }))!
-
-      const code = randomUUID()
-
-      await redis.set(code, user.phoneNumber)
-
-      await bot.sendMessage(
-        Number(user.id),
-        "Foi detectado que você está tentando fazer login, se você não fez isso, ignore esta mensagem. Para prosseguir, clique no botão abaixo.",
-        { reply_markup: { inline_keyboard: [
-          [
-            {
-              text: "Prosseguir",
-              url: `${process.env.FRONTEND_URL!}/verify?code=${code}`
-            }
-          ]
-        ]}}
-      )
-
       return
     }
+
+    const cookies = cookie.parse(socket.handshake.headers.cookie || "")
+    const token = cookies.token
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string }
 
     connections[phoneNumber] = new TelegramClient(
       new StringSession(""),
@@ -113,119 +93,133 @@ io.on("connection", (socket) => {
 
     const id = Number(await connections[phoneNumber].getPeerId("me"))
 
-    await prisma.user.create({
+    await prisma.phoneNumber.create({
       data: {
         id,
         phoneNumber,
         // @ts-ignore
-        session: connections[phoneNumber].session.save()
+        session: connections[phoneNumber].session.save(),
+        userId: decoded.id
       }
     })
 
-    socket.emit("success", jwt.sign({ phoneNumber, id }, process.env.JWT_SECRET!))
-
-    await bot.sendMessage(
-      id,
-      "Cadastro concluido com sucesso! Clique no botão abaixo paara acessar o painel",
-      { reply_markup: { inline_keyboard: [
-        [
-          {
-            text: "Acessar painel",
-            url: `${process.env.FRONTEND_URL!}/`
-          }
-        ]
-      ]}}
-    )
+    socket.emit("success")
   })
 })
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN!, { polling: true })
 
 bot.onText(/\/start/, async (msg) => {
-  if (await prisma.user.findUnique({ where: { id: Number(msg.chat.id) } })) {
-    await bot.sendMessage(
-      msg.chat.id,
-      "Você já está cadastrado! Para acessar o painel, clique no botão abaixo.",
-      { reply_markup: { inline_keyboard: [
+  const chatId = msg.chat.id
+
+  await bot.sendMessage(chatId, "Olá! Para acessar o painel clique no botão abaixo", {
+    reply_markup: {
+      inline_keyboard: [
         [
           {
             text: "Acessar painel",
-            url: `${process.env.FRONTEND_URL!}/`
+            url: `${process.env.FRONTEND_URL}/login`
           }
         ]
-      ]}}
-    )
-
-    return
-  }
-
-  await bot.sendMessage(
-    msg.chat.id,
-    "Olá! Para começar a usar o bot, por favor me clique no botão abaixo e envie seu contato.",
-    { reply_markup: { keyboard: [
-      [
-        {
-          text: "Enviar contato",
-          request_contact: true
-        }
       ]
-    ]}}
-  )
+    }
+  })
 })
 
-bot.on("message", async (msg) => {
-  if (msg.contact) {
-   if (await prisma.user.findUnique({ where: { id: Number(msg.chat.id) } })) {
-      await bot.sendMessage(
-        msg.chat.id,
-        "Você já está cadastrado! Para acessar o painel, clique no botão abaixo.",
-        { reply_markup: { inline_keyboard: [
-          [
-            {
-              text: "Acessar painel",
-              url: `${process.env.FRONTEND_URL!}/`
-            }
-          ]
-        ]}}
-      )
-    } else {
-      await bot.sendMessage(
-        msg.chat.id,
-        "Para prosseguir, clique no botão abaixo:",
-        { reply_markup: { inline_keyboard: [
-          [
-            {
-              text: "Prosseguir",
-              url: `${process.env.FRONTEND_URL!}/verify?phone=${msg.contact!.phone_number}`
-            }
-          ]
-        ]}}
-      )
+app.post("/register", async (req, res) => {
+  const { email, password } = req.body
+
+  let user = await prisma.user.findUnique({
+    where: {
+      email
     }
+  })
+
+  if (user) {
+    return res.status(400).json({
+      message: "User already exists"
+    })
   }
+
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  user = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword
+    }
+  })
+
+  res.cookie("token", jwt.sign({ id: user.id }, process.env.JWT_SECRET!), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production"
+  })
+
+  res.status(200).json({})
+})
+
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email
+    }
+  })
+
+  if (!user) {
+    return res.status(400).json({
+      message: "User not found"
+    })
+  }
+
+  const isPasswordCorrect = await bcrypt.compare(password, user.password)
+
+  if (!isPasswordCorrect) {
+    return res.status(400).json({
+      message: "Incorrect password"
+    })
+  }
+
+  res.cookie("token", jwt.sign({ id: user.id }, process.env.JWT_SECRET!), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production"
+  })
+
+  res.status(200).json({})
 })
 
 app.post("/massive_add", jwtMiddleware, async (req, res) => {
-  // @ts-ignore
-  const client = connections[req.user.phoneNumber]
+  const { phoneNumbers, smallDelay, bigDelay, cicleSize } = req.body
+
+  const clients = Object.entries(connections).filter(([phoneNumber]) => phoneNumbers.includes(phoneNumber)).map(([_, client]) => client)
+  const client = clients[0]
 
   const entity = await client.getEntity(req.body.toChat)
   const inputEntity = await client.getInputEntity(entity)
 
   res.status(200).json({})
 
+  let i = 0
+  let cicles = 0
+  const phonesQuantity = phoneNumbers.length
+
   for await (const participant of client.iterParticipants(await client.getEntity(req.body.fromChat))) {
+    const clientToUse = clients[i]
+
     try {
-      new Api.messages.AddChatUser({
-        chatId: entity.id,
-        userId: await client.getInputEntity(participant)
-      })
+      await clientToUse.invoke(
+        new Api.messages.AddChatUser({
+          chatId: entity.id,
+          userId: await client.getInputEntity(participant)
+        })
+      )
     } catch (error) {
       console.log(error)
     }
 
     try {
-      await client.invoke(
+      await clientToUse.invoke(
         new Api.channels.InviteToChannel({
           channel: inputEntity,
           users: [participant]
@@ -234,6 +228,20 @@ app.post("/massive_add", jwtMiddleware, async (req, res) => {
     } catch (error) {
       console.log(error)
     }
+
+    i++
+
+    if (i === phonesQuantity) {
+      cicles++
+      i = 0
+
+      if (cicles === cicleSize) {
+        cicles = 0
+        await new Promise((resolve) => setTimeout(resolve, bigDelay))
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, smallDelay))
+      }
+    }
   }
 })
 
@@ -241,24 +249,20 @@ app.get("/notifiers", jwtMiddleware, async (req, res) => {
   // @ts-ignore
   const userId = req.user.id
 
-  const notifiers = await prisma.notifier.findMany({ where: { userId } })
+  const notifiers = await prisma.notifier.findMany({ where: { phone: { userId } } })
 
   // parse bigint to number
   return res.send(JSON.stringify(notifiers, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
 app.post("/notifiers", jwtMiddleware, async (req, res) => {
-  // @ts-ignore
-  const user = req.user
-
-  const { rule, message, chatId, name, forwardTo } = req.body
+  const { rule, message, chatId, name, phoneNumberId } = req.body
 
   const notifier = await prisma.notifier.create({
     data: {
       chatId,
       name,
-      // @ts-ignore
-      userId: user.id,
+      phoneId: phoneNumberId,
       // parse bigint to number
       rule: JSON.stringify(rule, (_key, value) => typeof value === "bigint" ? Number(value) : value),
       message
@@ -272,8 +276,10 @@ app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
   const notifier = await prisma.notifier.deleteMany({
     where: {
       id: req.params.id,
-      // @ts-ignore
-      userId: req.user.id
+      phone: {
+        // @ts-ignore
+        userId: req.user.id
+      }
     }
   })
 
@@ -284,8 +290,10 @@ app.get("/notifiers/:id", jwtMiddleware, async (req, res) => {
   const notifier = await prisma.notifier.findFirst({
     where: {
       id: req.params.id,
-      // @ts-ignore
-      userId: req.user.id
+      phone: {
+        // @ts-ignore
+        userId: req.user.id
+      }
     }
   })
 
@@ -296,8 +304,10 @@ app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
   const notifier = await prisma.notifier.deleteMany({
     where: {
       id: req.params.id,
-      // @ts-ignore
-      userId: req.user.id
+      phone: {
+        // @ts-ignore
+        userId: req.user.id
+      }
     }
   })
 
@@ -321,6 +331,16 @@ app.get("/chats", jwtMiddleware, async (req, res) => {
   }
 
   return res.send(JSON.stringify(chats, (_key, value) => typeof value === "bigint" ? Number(value) : value))
+})
+
+app.get("/phones", jwtMiddleware, async (req, res) => {
+  // @ts-ignore
+  const userId = req.user.id
+
+  const phones = await prisma.phoneNumber.findMany({ where: { userId } })
+
+  // parse bigint to number
+  return res.send(JSON.stringify(phones, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
 app.get("/chats/:id", jwtMiddleware, async (req, res) => {
@@ -368,25 +388,21 @@ app.get("/forwarders", jwtMiddleware, async (req, res) => {
   // @ts-ignore
   const userId = req.user.id
 
-  const forwarders = await prisma.forwarder.findMany({ where: { userId } })
+  const forwarders = await prisma.forwarder.findMany({ where: { phone: { userId } } })
 
   // parse bigint to number
   return res.send(JSON.stringify(forwarders, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
 app.post("/forwarders", jwtMiddleware, async (req, res) => {
-  // @ts-ignore
-  const user = req.user
-
-  const { fromChat, toChat, name, rule } = req.body
+  const { fromChat, toChat, name, rule, phoneNumberId } = req.body
 
   const forwarder = await prisma.forwarder.create({
     data: {
       fromChat: Number(fromChat),
       toChat: Number(toChat),
       name,
-      // @ts-ignore
-      userId: user.id,
+      phoneId: phoneNumberId,
       rule: JSON.stringify(rule, (_key, value) => typeof value === "bigint" ? Number(value) : value)
     }
   })
@@ -398,8 +414,10 @@ app.delete("/forwarders/:id", jwtMiddleware, async (req, res) => {
   const forwarder = await prisma.forwarder.deleteMany({
     where: {
       id: req.params.id,
-      // @ts-ignore
-      userId: req.user.id
+      phone: {
+        // @ts-ignore
+        userId: req.user.id
+      }
     }
   })
 
@@ -410,8 +428,10 @@ app.get("/forwarders/:id", jwtMiddleware, async (req, res) => {
   const forwarder = await prisma.forwarder.findFirst({
     where: {
       id: req.params.id,
-      // @ts-ignore
-      userId: req.user.id
+      phone: {
+        // @ts-ignore
+        userId: req.user.id
+      }
     }
   })
 
@@ -447,7 +467,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
 ;(async () => {
   await prisma.$connect()
 
-  const users = await prisma.user.findMany({ include: { notifiers: true, forwarders: true } })
+  const users = await prisma.phoneNumber.findMany({ include: { notifiers: true, forwarders: true } })
 
   try {
     await Promise.all(users.map(async user => {

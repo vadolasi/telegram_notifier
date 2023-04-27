@@ -6,6 +6,7 @@ const fetcher = (url: string) => fetch(`${import.meta.env.VITE_BACKEND_URL}${url
 export default function (): JSX.Element {
   const { data: notifiers, error } = useSWR("/notifiers", fetcher)
   const { data: forwarders, error: errorForwarders } = useSWR("/forwarders", fetcher)
+  const { data: phones, error: errorPhones } = useSWR("/phones", fetcher)
 
   return (
     <div>
@@ -37,6 +38,20 @@ export default function (): JSX.Element {
         </ul>
       )}
       <a href="/forwarders/new">Novo repassador</a>
+      <h1>Números</h1>
+      {errorPhones && <div>Failed to load</div>}
+      {!phones && !errorPhones && <div>Loading...</div>}
+      {phones && phones.length === 0 && <div>No phones found</div>}
+      {phones && (
+        <ul>
+          {phones.map((phone: any) => (
+            <li key={phone.id}>
+              phone.phoneNumber
+            </li>
+          ))}
+        </ul>
+      )}
+      <a href="/addPhone">Novo número</a>
       <br/>
       <br/>
       <a href="/massive_add">Adicionar membros em massa</a>
