@@ -211,7 +211,7 @@ app.post("/massive_add", jwtMiddleware, async (req, res) => {
       await clientToUse.invoke(
         new Api.messages.AddChatUser({
           chatId: entity.id,
-          userId: await client.getInputEntity(participant)
+          userId: await clientToUse.getInputEntity(participant)
         })
       )
     } catch (error) {
@@ -221,8 +221,8 @@ app.post("/massive_add", jwtMiddleware, async (req, res) => {
     try {
       await clientToUse.invoke(
         new Api.channels.InviteToChannel({
-          channel: inputEntity,
-          users: [participant]
+          channel: await clientToUse.getInputEntity(entity.id),
+          users: [await clientToUse.getInputEntity(participant)]
         })
       )
     } catch (error) {

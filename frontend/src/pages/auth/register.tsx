@@ -51,6 +51,7 @@ export default function (): JSX.Element {
           <input type="password" id="passwordConfirmation" {...register("passwordConfirmation")} />
           {errors.passwordConfirmation && <p>{errors.passwordConfirmation.message}</p>}
         </div>
+        <button type="submit">Register</button>
       </form>
     </div>
   )
