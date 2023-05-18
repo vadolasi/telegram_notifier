@@ -9,7 +9,7 @@ const schema = yup.object({
 }).required()
 
 export default function (): JSX.Element {
-  const { register, handleSubmit, formState:{ errors } } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema)
   })
   const navigate = useNavigate()

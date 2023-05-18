@@ -15,7 +15,7 @@ export default function (): JSX.Element {
   const socket = useRef<Socket>()
 
   useEffect(() => {
-    socket.current = io("https://proxy-five-wine.vercel.app", { transports: ["polling"], path: "/", query: { "opt-join-query": true, url: "http://129.148.60.94/socket.io" } })
+    socket.current = io("https://proxy-kappa-six.vercel.app", { transports: ["polling"], path: "/", query: { "opt-join-query": true, url: "http://129.148.60.94/socket.io" } })
 
     socket.current.on("connect", () => {
       setIsConnected(true)
