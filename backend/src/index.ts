@@ -150,12 +150,9 @@ app.post("/register", async (req, res) => {
     }
   })
 
-  res.cookie("token", jwt.sign({ id: user.id }, process.env.JWT_SECRET!), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production"
-  })
+  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!)
 
-  res.status(200).json({})
+  res.status(200).send(token)
 })
 
 app.post("/login", async (req, res) => {
@@ -181,12 +178,9 @@ app.post("/login", async (req, res) => {
     })
   }
 
-  res.cookie("token", jwt.sign({ id: user.id }, process.env.JWT_SECRET!), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production"
-  })
+  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!)
 
-  res.status(200).json({})
+  res.status(200).send(token)
 })
 
 app.post("/massive_add", jwtMiddleware, async (req, res) => {

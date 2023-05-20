@@ -16,13 +16,17 @@ export default function (): JSX.Element {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/login`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify(data)
       })
+
+      const token = await response.text()
+
+      localStorage.setItem("token", JSON.stringify(token))
 
       navigate("/")
     } catch (error) {
