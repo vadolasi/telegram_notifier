@@ -34,7 +34,7 @@ const io = new Server(server, { transports: ["polling"], cors: { origin: "*" } }
 const JWT_SECRET = process.env.JWT_SECRET!
 
 const jwtMiddleware = (req: any, res: any, next: any) => {
-  const token = req.cookies.token
+  const token = req.headers.authorization
 
   if (!token) {
     res.status(401).send("Unauthorized")
