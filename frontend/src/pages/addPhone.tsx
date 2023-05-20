@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks"
-import { Route } from "react-router-dom"
+import { Link } from "react-router-dom"
 
 export default function(): JSX.Element {
   const [phone, setPhone] = useState<string>("")
@@ -8,7 +8,7 @@ export default function(): JSX.Element {
     <div>
       <label htmlFor="phone">Phone (ex: +5511988888888)</label>
       <input type="number" id="phone" value={phone} onChange={e => setPhone((e.target as any).value)} />
-      <Route path={`/verify?phone=${phone}`} />
+      <Link to={`/verify?phone=${phone}`}>Verificar</Link>
     </div>
   )
 }
