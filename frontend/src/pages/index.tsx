@@ -46,7 +46,7 @@ export default function (): JSX.Element {
         <ul>
           {phones.map((phone: any) => (
             <li key={phone.id}>
-              phone.phoneNumber
+              {phone.phoneNumber}
             </li>
           ))}
         </ul>
