@@ -87,7 +87,7 @@ export default function (): JSX.Element {
         </div>
         <div>
           <label htmlFor="number">Número</label>
-          <Select placeholder="Selecione o número..." options={phoneNumbers?.map((phoneNumber: any) => ({ value: phoneNumber.id, label: phoneNumber.number }))} onChange={(e: any) => setNumber(e.value)} />
+          <Select placeholder="Selecione o número..." options={phoneNumbers?.map((phoneNumber: any) => ({ value: phoneNumber.id, label: phoneNumber.phoneNumber }))} onChange={(e: any) => setNumber(e.value)} />
         </div>
         <div>
           <label htmlFor="fromChat">Chat de recebimento</label>
