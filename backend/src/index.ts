@@ -54,13 +54,11 @@ const jwtMiddleware = (req: any, res: any, next: any) => {
 }
 
 io.on("connection", (socket) => {
-  socket.on("verify", async (phoneNumber: string) => {
+  socket.on("verify", async (phoneNumber: string, token: string) => {
     if (connections[phoneNumber]) {
       return
     }
 
-    const cookies = cookie.parse(socket.handshake.headers.cookie || "")
-    const token = cookies.token
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string }
 
     connections[phoneNumber] = new TelegramClient(

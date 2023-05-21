@@ -20,7 +20,7 @@ export default function (): JSX.Element {
     socket.current.on("connect", () => {
       setIsConnected(true)
 
-      socket.current?.emit("verify", searchParams.get("phone"))
+      socket.current?.emit("verify", searchParams.get("phone"), JSON.parse(localStorage.getItem("token")!))
     })
 
     socket.current.on("disconnect", () => {
