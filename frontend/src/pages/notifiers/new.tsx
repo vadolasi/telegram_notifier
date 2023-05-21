@@ -10,9 +10,6 @@ const fetcher = (url: string) => fetch(`${import.meta.env.VITE_BACKEND_URL}${url
 
 export default function (): JSX.Element {
   const [chat, setChat] = useState<number | null>(null)
-  const { data: chats, error: chatsError } = useSWR("/chats", fetcher)
-  const { data: messages, error: messagesError } = useSWR(chat ? `/chats/${chat}` : undefined, fetcher)
-  const { data: phoneNumbers, error: phoneNumbersError } = useSWR("/phones", fetcher)
   const navigate = useNavigate()
   const [name, setName] = useState("")
   const [message, setMessage] = useState("")
@@ -27,6 +24,9 @@ export default function (): JSX.Element {
   const [textsToMatch, setTextsToMatch] = useState<string[]>([])
   const [textsToMatchB, setTextsToMatchB] = useState<string[]>([])
   const [number, setNumber] = useState("")
+  const { data: chats, error: chatsError } = useSWR(number ? `chats/?phone=${number}` : undefined, fetcher)
+  const { data: messages, error: messagesError } = useSWR(chat ? `/chats/${chat}/?phone=${number}` : undefined, fetcher)
+  const { data: phoneNumbers, error: phoneNumbersError } = useSWR("/phones", fetcher)
 
   useEffect(() => {
     console.log(messages)

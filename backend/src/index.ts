@@ -308,7 +308,7 @@ app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
 
 app.get("/chats", jwtMiddleware, async (req, res) => {
   // @ts-ignore
-  const client = connections[req.user.phoneNumber]
+  const client = connections[req.query.phone]
   let chats: any
 
   try {
@@ -337,7 +337,7 @@ app.get("/phones", jwtMiddleware, async (req, res) => {
 
 app.get("/chats/:id", jwtMiddleware, async (req, res) => {
   // @ts-ignore
-  const client = connections[req.user.phoneNumber]
+  const client = connections[req.query.phone]
 
   const chat = await Promise.all((await client.getMessages(parseInt(req.params.id), { limit: 20, offsetId: req.query.offsetId ? parseInt(req.query.offsetId as string) : undefined })).map(async message => {
     let stickerUrl: string | undefined = undefined

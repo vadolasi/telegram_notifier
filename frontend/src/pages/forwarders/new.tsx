@@ -17,8 +17,8 @@ export default function (): JSX.Element {
   const [includesText, setIncludesText] = useState(false)
   const [textsToMatch, setTextsToMatch] = useState<string[]>([])
 
-  const { data: chats, error: chatsError } = useSWR("/chats", fetcher)
-  const { data: messages, error: messagesError } = useSWR(fromChat ? `/chats/${fromChat}` : undefined, fetcher)
+  const { data: chats, error: chatsError } = useSWR(number ? `/chats/?phone=${number}` : undefined, fetcher)
+  const { data: messages, error: messagesError } = useSWR(fromChat ? `/chats/${fromChat}/?phone=${number}?` : undefined, fetcher)
   const { data: phoneNumbers, error: phoneNumbersError } = useSWR("/phones", fetcher)
 
   const navigate = useNavigate()
