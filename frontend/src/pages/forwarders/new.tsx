@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown"
 import toast from "react-hot-toast"
 import { useNavigate } from "react-router-dom"
 
-const fetcher = (url: string) => fetch(`${import.meta.env.VITE_BACKEND_URL}${url}`, { headers: { "Content-Type": "application/json" } }).then((res) => res.json()).then((data) => data)
+const fetcher = (url: string) => fetch(`${import.meta.env.VITE_BACKEND_URL}${url}`, { headers: { "Content-Type": "application/json", Authorization: JSON.parse(localStorage.getItem("token")!) } }).then((res) => res.json()).then((data) => data)
 
 export default function (): JSX.Element {
   const [name, setName] = useState("")
