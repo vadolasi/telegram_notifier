@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom"
 import useSWR from "swr"
 import { useNavigate } from "react-router-dom"
 
-const fetcher = (url: string) => fetch(`${import.meta.env.VITE_BACKEND_URL}${url}`, { headers: { "Content-Type": "application/json", Authorization: JSON.parse(localStorage.getItem("token")!) } }).then((res) => res.json()).then((data) => data)
+const fetcher = (url: string) => fetch(`${import.meta.env.VITE_BACKEND_URL}http://129.148.60.94${url}`, { headers: { "Content-Type": "application/json", Authorization: JSON.parse(localStorage.getItem("token")!) } }).then((res) => res.json()).then((data) => data)
 
 export default function (): JSX.Element {
   let { id } = useParams()
