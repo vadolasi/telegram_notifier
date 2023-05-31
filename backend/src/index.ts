@@ -430,6 +430,10 @@ app.get("/forwarders/:id", jwtMiddleware, async (req, res) => {
   return res.send(JSON.stringify(forwarder, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
+app.get("/connections", (req, res) => {
+  res.send(Object.keys(connections))
+})
+
 process.on("exit", async () => {
   await prisma.$disconnect()
   await bot.logOut()
