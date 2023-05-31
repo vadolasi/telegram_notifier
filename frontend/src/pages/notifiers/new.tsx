@@ -31,7 +31,7 @@ export default function (): JSX.Element {
   const [textsToMatchB, setTextsToMatchB] = useState<string[]>([])
   const [number, setNumber] = useState("")
   const { data: chats, error: chatsError } = useSWR(number ? `/chats/?phone=${number}` : undefined, fetcher)
-  const { data: messages, error: messagesError } = useSWR(chat ? `/chats/${chat}/?phone=${number}` : undefined, fetcher)
+  const { data: messages, error: messagesError } = useSWR(chat ? `/chats/${chat}/${number}` : undefined, fetcher)
   const { data: phoneNumbers, error: phoneNumbersError } = useSWR("/phones", fetcher)
 
   useEffect(() => {

@@ -335,9 +335,9 @@ app.get("/phones", jwtMiddleware, async (req, res) => {
   return res.send(JSON.stringify(phones, (_key, value) => typeof value === "bigint" ? Number(value) : value))
 })
 
-app.get("/chats/:id", jwtMiddleware, async (req, res) => {
+app.get("/chats/:id/:phone", jwtMiddleware, async (req, res) => {
   // @ts-ignore
-  const client = connections[req.query.phone.split("/")[0]]
+  const client = connections[req.params.phone.split("/")[0]]
 
   const chat = await Promise.all((await client.getMessages(parseInt(req.params.id), { limit: 20, offsetId: req.query.offsetId ? parseInt(req.query.offsetId as string) : undefined })).map(async message => {
     let stickerUrl: string | undefined = undefined
