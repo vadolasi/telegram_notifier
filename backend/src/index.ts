@@ -485,7 +485,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
           where: {
             chatId: Number(ev.message.chatId),
             // @ts-ignore
-            userId: user.id
+            userId: Number(user.id)
           }
         })
 
@@ -523,7 +523,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
           where: {
             fromChat: Number(ev.message.chatId),
             // @ts-ignore
-            userId: user.id
+            userId: Number(user.id)
           }
         })
 
