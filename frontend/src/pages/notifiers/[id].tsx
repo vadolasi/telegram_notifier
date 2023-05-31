@@ -8,7 +8,7 @@ const fetcher = async (url: string): Promise<any> => {
   toUrl.searchParams.set("h-Access-Control-Allow-Origin", "*")
   toUrl.searchParams.set("url", `http://129.148.60.94${url}`)
 
-  return fetch(url, { headers: { "Content-Type": "application/json", Authorization: JSON.parse(localStorage.getItem("token")!) } }).then((res) => res.json()).then((data) => data)
+  return fetch(toUrl, { headers: { "Content-Type": "application/json", Authorization: JSON.parse(localStorage.getItem("token")!) } }).then((res) => res.json()).then((data) => data)
 }
 
 export default function (): JSX.Element {
