@@ -431,7 +431,7 @@ app.get("/forwarders/:id", jwtMiddleware, async (req, res) => {
 })
 
 app.get("/connections", (req, res) => {
-  res.send(Object.keys(connections))
+  res.send({ connections: Object.keys(connections), phone: req.query.phone })
 })
 
 process.on("exit", async () => {
