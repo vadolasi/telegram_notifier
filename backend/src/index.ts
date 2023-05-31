@@ -254,7 +254,11 @@ app.post("/notifiers", jwtMiddleware, async (req, res) => {
     data: {
       chatId,
       name,
-      phoneId: phoneNumberId,
+      phone: {
+        connect: {
+          id: phoneNumberId
+        }
+      },
       // parse bigint to number
       rule: JSON.stringify(rule, (_key, value) => typeof value === "bigint" ? Number(value) : value),
       message
@@ -394,7 +398,11 @@ app.post("/forwarders", jwtMiddleware, async (req, res) => {
       fromChat: Number(fromChat),
       toChat: Number(toChat),
       name,
-      phoneId: phoneNumberId,
+      phone: {
+        connect: {
+          id: phoneNumberId
+        }
+      },
       rule: JSON.stringify(rule, (_key, value) => typeof value === "bigint" ? Number(value) : value)
     }
   })
