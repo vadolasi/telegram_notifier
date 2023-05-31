@@ -256,7 +256,7 @@ app.post("/notifiers", jwtMiddleware, async (req, res) => {
       name,
       phone: {
         connect: {
-          id: Number(phoneNumberId)
+          phoneNumber: phoneNumberId
         }
       },
       // parse bigint to number
@@ -400,7 +400,7 @@ app.post("/forwarders", jwtMiddleware, async (req, res) => {
       name,
       phone: {
         connect: {
-          id: Number(phoneNumberId)
+          phoneNumber: phoneNumberId
         }
       },
       rule: JSON.stringify(rule, (_key, value) => typeof value === "bigint" ? Number(value) : value)
