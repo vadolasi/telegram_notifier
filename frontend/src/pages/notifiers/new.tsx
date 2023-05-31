@@ -90,7 +90,10 @@ export default function (): JSX.Element {
     }}
 
     try {
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/notifiers`, {
+      const toUrl = new URL(import.meta.env.VITE_BACKEND_URL)
+      toUrl.searchParams.set("h-Access-Control-Allow-Origin", "*")
+      toUrl.searchParams.set("url", `http://129.148.60.94/notifiers`)
+      await fetch(toUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
