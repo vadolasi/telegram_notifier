@@ -484,8 +484,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
         const notifiers = await prisma.notifier.findMany({
           where: {
             chatId: Number(ev.message.chatId),
-            // @ts-ignore
-            userId: Number(user.id)
+            phoneId: user.id
           }
         })
 
@@ -522,8 +521,7 @@ type Message = TextMessage | StickerMessage | MediaMessage
         const forwarders = await prisma.forwarder.findMany({
           where: {
             fromChat: Number(ev.message.chatId),
-            // @ts-ignore
-            userId: Number(user.id)
+            phoneId: user.id
           }
         })
 
