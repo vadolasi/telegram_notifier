@@ -308,7 +308,7 @@ app.delete("/notifiers/:id", jwtMiddleware, async (req, res) => {
 
 app.get("/chats", jwtMiddleware, async (req, res) => {
   // @ts-ignore
-  const client = connections[req.query.phone]
+  const client = connections[req.query.phone.split("/")[0]]
   let chats: any
 
   try {
@@ -337,7 +337,7 @@ app.get("/phones", jwtMiddleware, async (req, res) => {
 
 app.get("/chats/:id", jwtMiddleware, async (req, res) => {
   // @ts-ignore
-  const client = connections[req.query.phone]
+  const client = connections[req.query.phone.split("/")[0]]
 
   const chat = await Promise.all((await client.getMessages(parseInt(req.params.id), { limit: 20, offsetId: req.query.offsetId ? parseInt(req.query.offsetId as string) : undefined })).map(async message => {
     let stickerUrl: string | undefined = undefined
@@ -431,7 +431,7 @@ app.get("/forwarders/:id", jwtMiddleware, async (req, res) => {
 })
 
 app.get("/connections", (req, res) => {
-  res.send({ connections: Object.keys(connections), phone: req.query.phone })
+  res.send({ connections: Object.keys(connections), phone: String(req.query.phone).split("/")[0] })
 })
 
 process.on("exit", async () => {
